@@ -1,0 +1,20 @@
+https://huggingface.co/datasets/Shunian/kaggle-mbti-cleaned
+https://huggingface.co/datasets/Shunian/kaggle-mbti-cleaned-augmented
+https://huggingface.co/datasets/switmer/MBTI-Sentiment
+
+https://huggingface.co/datasets/srky/ICNALE_writing_score
+https://huggingface.co/datasets/sagteam/author_profiling
+https://huggingface.co/datasets/barilan/blog_authorship_corpus
+https://huggingface.co/datasets/JyotiNayak/political_ideologies
+
+
+# Maybe usefull:
+
+https://huggingface.co/datasets/tee-oh-double-dee/social-orientation
+https://huggingface.co/datasets/takahashi111/identify-writers-country
+https://huggingface.co/datasets/coastalcph/populism-eu-speeches
+https://huggingface.co/datasets/facebook/md_gender_bias
+
+# Ciekawe ale bez opisu:
+
+https://huggingface.co/datasets/moatazhamza194/gender_bias_test
