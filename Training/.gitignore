@@ -4,3 +4,10 @@
 /DATA/mbti
 /DATA/political
 /DATA/__pycache__
+/DATA/__backup__
+/MODELS/__pycache__
+/MODELS/gender/tokenized*
+/MODELS/age/tokenized*
+/MODELS/language/tokenized*
+/MODELS/mbti/tokenized*
+/MODELS/political/tokenized*

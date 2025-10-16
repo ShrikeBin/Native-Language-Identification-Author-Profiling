@@ -2,13 +2,14 @@
 import pandas as pd
 from transformers import DistilBertTokenizerFast
 import sys
+import traceback
 
 # --- Config ---
 text_col = "text"
 file_path = sys.argv[1]
-bucket_size = 20      # tokens per bucket
-batch_size = 500      # number of lines per batch
-output_file = "token_distribution"
+bucket_size = 10       # tokens per bucket
+batch_size = 500       # number of lines per batch
+output_file = "token_distribution.txt"
 
 # --- Load dataset ---
 if file_path.endswith(".parquet"):
@@ -18,6 +19,12 @@ elif file_path.endswith(".csv"):
 else:
     raise ValueError("File must be CSV or Parquet")
 
+# --- Ensure text column is clean ---
+if text_col not in df.columns:
+    raise ValueError(f"Column '{text_col}' not found in {file_path}")
+
+df[text_col] = df[text_col].astype(str).fillna("")
+
 # --- Initialize tokenizer ---
 tokenizer = DistilBertTokenizerFast.from_pretrained("distilbert-base-uncased")
 
@@ -25,26 +32,42 @@ tokenizer = DistilBertTokenizerFast.from_pretrained("distilbert-base-uncased")
 n = len(df)
 n_tokens = []
 
+print(f"Processing {n} lines from {file_path}...\n")
+
 for start in range(0, n, batch_size):
     batch_texts = df[text_col].iloc[start:start+batch_size].tolist()
-    batch_enc = tokenizer(batch_texts, add_special_tokens=True, truncation=False, padding=False)
-    batch_lengths = [len(ids) for ids in batch_enc['input_ids']]
-    n_tokens.extend(batch_lengths)
+    
+    # Ensure all entries are valid strings
+    batch_texts = [
+        t if isinstance(t, str) else str(t) if t is not None else ""
+        for t in batch_texts
+    ]
+
+    try:
+        batch_enc = tokenizer(batch_texts, add_special_tokens=True, truncation=False, padding=False)
+        batch_lengths = [len(ids) for ids in batch_enc["input_ids"]]
+        n_tokens.extend(batch_lengths)
+    except Exception as e:
+        print(f"\n⚠️ Batch failed at index {start}: {e}")
+        traceback.print_exc()
+        # recover with placeholder lengths (so index alignment is preserved)
+        n_tokens.extend([0] * len(batch_texts))
+
     # progress bar
     print(f"\rProcessed {min(start+batch_size, n)} / {n} lines", end="")
 
-df['n_tokens'] = n_tokens
+df["n_tokens"] = n_tokens
 print("\nTokenization done!")
 
 # --- Bucket tokens ---
-max_token = df['n_tokens'].max()
+max_token = df["n_tokens"].max()
 bins = list(range(0, max_token + bucket_size, bucket_size))
 labels = [f"{b}-{b+bucket_size}" for b in bins[:-1]]
 
-df['token_bucket'] = pd.cut(df['n_tokens'], bins=bins, labels=labels, right=False)
+df["token_bucket"] = pd.cut(df["n_tokens"], bins=bins, labels=labels, right=False)
 
 # --- Compute percentage per bucket ---
-distribution = df['token_bucket'].value_counts(normalize=True).sort_index() * 100
+distribution = df["token_bucket"].value_counts(normalize=True).sort_index() * 100
 
 # --- Print and save ---
 with open(output_file, "w") as f:
