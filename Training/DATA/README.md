@@ -25,10 +25,11 @@
 
 ### Political View
 - **LONG**:
-  - Synthetic data created using GPT-4 (HuggingFace)
+  - Politically biased articles from allsides.com (HuggingFace) (unused due to too little about author personal belief (too hard to find bias))
 - **SHORT**:
-  - Politically biased articles from allsides.com (HuggingFace)
+  - Synthetic data created using GPT-4 (HuggingFace)
   - Scraped American political tweets (HuggingFace)
+
 ---
 
 ## Tools and Techniques Used
