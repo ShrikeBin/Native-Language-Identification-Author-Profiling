@@ -8,6 +8,7 @@ AGE_PATH =  "../MODELS/age/regressionFull/distilBERT_age_regression_model/model.
 GENDER_PATH = "../MODELS/gender/regressionFull/distilBERT_gender_regression_model/model.safetensors"
 POLITICAL_PATH = "../MODELS/political/regressionFullShort/distilBERT_political_regression_model/model.safetensors"
 MBTI_PATH = "../MODELS/mbti/classificationFull/distilBERT_mbti_classification_model/model.safetensors"
+LANGUAGE_PATH = "../MODELS/language/classificationFull/distilBERT_language_classification_model/model.safetensors"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -107,12 +108,19 @@ for name, path in models.items():
 mbti_labels = {0: "ISTJ", 1: "ISFJ", 2: "INFJ", 3: "INTJ", 4: "ISTP", 5: "ISFP", 6: "INFP", 7: "INTP", 8: "ESTP", 9: "ESFP", 10: "ENFP", 11: "ENTP", 12: "ESTJ", 13: "ESFJ", 14: "ENFJ", 15: "ENTJ"}
 predictions["mbti"] = run_classification(MBTI_PATH, texts, 16, 3)
 
+import json
+with open("../DATA/language/label_to_num.json") as f:
+    lang_labels = json.load(f)
+lang_labels = {v : k for k, v in lang_labels.items()}
+predictions["language"] = run_classification(LANGUAGE_PATH, texts, 20, 3)
 
 # === Present Results ===
 for i in range(len(texts)):
     age, gender, political = [predictions[k][i] for k in ["age", "gender", "political"]]
     mbti = predictions["mbti"][0][i]
-    prob = predictions["mbti"][1][i]
+    prob_mbti = predictions["mbti"][1][i]
+    lang = predictions["language"][0][i]
+    prob_lang = predictions["language"][1][i]
 
     print(f"Text: {texts[i]}")
     
@@ -126,7 +134,10 @@ for i in range(len(texts)):
     print(f"Political: {({0: "left", 1: "center", 2: "right"}[round(political)])} ({political})")
 
     # mbti
-    print(f"MBTI: {mbti_labels[mbti[0]]} ({prob[0]}) or {mbti_labels[mbti[1]]} ({prob[1]}) or {mbti_labels[mbti[2]]} ({prob[2]})")
+    print(f"MBTI: {mbti_labels[mbti[0]]} ({prob_mbti[0]}) or {mbti_labels[mbti[1]]} ({prob_mbti[1]}) or {mbti_labels[mbti[2]]} ({prob_mbti[2]})")
+
+    # language
+    print(f"Native Language: {lang_labels[lang[0]]} ({prob_lang[0]}) or {lang_labels[lang[1]]} ({prob_lang[1]}) or {lang_labels[lang[2]]} ({prob_lang[2]})")
 
     print("=" * 40)
     

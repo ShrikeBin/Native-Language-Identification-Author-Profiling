@@ -9,6 +9,7 @@ AGE_PATH =  "../MODELS/age/regressionFull/distilBERT_age_regression_model/model.
 GENDER_PATH = "../MODELS/gender/regressionFull/distilBERT_gender_regression_model/model.safetensors"
 POLITICAL_PATH = "../MODELS/political/regressionFullShort/distilBERT_political_regression_model/model.safetensors"
 MBTI_PATH = "../MODELS/mbti/classificationFull/distilBERT_mbti_classification_model/model.safetensors"
+LANGUAGE_PATH = "../MODELS/language/classificationFull/distilBERT_language_classification_model/model.safetensors"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -66,6 +67,8 @@ class DistilBertRegression(nn.Module):
             loss = loss_fn(logits, labels)
         return {"loss": loss, "logits": logits}
 
+import matplotlib.pyplot as plt
+
 def run_regression(path, texts):
     model = DistilBertRegression(MODEL_NAME)
     load_model(model, path)
@@ -74,13 +77,15 @@ def run_regression(path, texts):
         shap.maskers.Text(tokenizer)
     )
     shap_values = explainer(texts)
-    #shap.plots.text(shap_values)
+    # shap.plots.text(shap_values)
     viz = shap.plots.force(
         shap_values.base_values[0],
         shap_values.values[0],
         shap_values.data[0]
     )
     shap.save_html("force_explanation.html", viz)
+    # plt.savefig("bar_plot.png", bbox_inches="tight", dpi=300)
+    # plt.close()
     clear_model(model)
     #return preds
 
@@ -91,20 +96,33 @@ from transformers import DistilBertForSequenceClassification
 def run_classification(path, texts, n, k):
     model = DistilBertForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=n)
     load_model(model, path)
-    preds = get_predictions(model, texts)
-    probs = torch.softmax(preds, dim=-1)
-    probs, preds = probs.topk(k=k, dim=-1)
-    preds = [[int(x) for x in row] for row in preds.tolist()]
-    probs = [[float(x) for x in row] for row in probs.tolist()]
+    explainer = shap.Explainer(
+        lambda inputs: torch.softmax(get_predictions(model, inputs), dim=-1),
+        shap.maskers.Text(tokenizer)
+    )
+    shap_values = explainer(texts)
+    #print(shap_values)
+
+    preds = get_predictions(model, [texts[0]])
+    pred = torch.argmax(torch.softmax(preds, dim=-1), dim=-1).item()
+    print(pred)
+
+    viz = shap.plots.force(
+        shap_values.base_values[0][pred],
+        shap_values.values[0][:, pred],
+        shap_values.data[0]
+    )
+    shap.save_html("force_explanation.html", viz)
     clear_model(model)
-    return preds, probs
+    #return preds, probs
 
 
 # === Run Models ===
 with open(EVAL_FILE, "r") as f:
     texts = f.read().splitlines()
 
-run_regression(GENDER_PATH, texts)
+#run_regression(GENDER_PATH, texts)
+run_classification(LANGUAGE_PATH, texts, 20, 1)
 
 # predictions = {}
 

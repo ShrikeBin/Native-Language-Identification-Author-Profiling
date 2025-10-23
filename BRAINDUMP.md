@@ -15,6 +15,7 @@
 - instead short tweets and synthetic data, much better for real life inference
 - all data has been analyzed by data length (in tokens) and cut and combined so that token distribution is similar (and around 250)
 - cutting long articles might have affected their usefullness (less context in a part of an article)
+- combined the languages into branches with personal heuristics, deleted ones that couldn't be passed into a bigger group and too small samle (Mongloian with 49 samples) as apoosed to (Hebrew 47 samples -> Arabic)
 
 ### Ideas
 - idea 1: shap -> can help debug the model, check if it pays attention to meaningful things
@@ -24,6 +25,8 @@
 - observation 1: predictions are better when writer is pretending to speak to someone
 - (could be because of the nature of the data: tweets, emails)
 - observation 2: age predictions tend to be higher (~25 for us) - could be because no labels for 21?
+- observation 3: language recognition model puts way too much emphasis on country names and keywords
+- (overtraining or bad dataset?)
 
 ### Observations (about the results)
 - liberals care more about interpunction? (find example and present on report?)
