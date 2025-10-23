@@ -74,6 +74,7 @@ def run_regression(path, texts):
         shap.maskers.Text(tokenizer)
     )
     shap_values = explainer(texts)
+    #shap.plots.text(shap_values)
     viz = shap.plots.force(
         shap_values.base_values[0],
         shap_values.values[0],
@@ -103,7 +104,7 @@ def run_classification(path, texts, n, k):
 with open(EVAL_FILE, "r") as f:
     texts = f.read().splitlines()
 
-run_regression(AGE_PATH, texts)
+run_regression(GENDER_PATH, texts)
 
 # predictions = {}
 
