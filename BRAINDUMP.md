@@ -6,6 +6,7 @@
 - also repo of guy who did the same thing
 - age and gender - blog authorship corpus, short texts, noisy data, not all ages -> regression
 - additionally for gender we have the email dataset for which we used an AI to pull author name from email metadata
+- we needed to find "best fit" for names as it was prone to finding stuff like "Al" - male in Magd**al**ena - female
 - then we scraped a website with a list of names and their respective gender -> map those onto our dataset
 - removing forwarded
 - losing some data in the process, but that's ok
