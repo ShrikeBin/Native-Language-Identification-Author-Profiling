@@ -5,6 +5,7 @@
 /DATA/political
 /DATA/__pycache__
 /DATA/__backup__
+/DATA/__backup2__
 /MODELS/__pycache__
 /MODELS/gender/tokenized*
 /MODELS/age/tokenized*

@@ -34,6 +34,10 @@
 - observation 2: age predictions tend to be higher (~25 for us) - could be because no labels for 21?
 - observation 3: language recognition model puts way too much emphasis on country names and keywords
 - (overtraining or bad dataset?)
+- observation 4: regular speech about any topic gives a "right wing" political result
+- maybe baseline is left and it just increases from there -> switch from regression to classification?
+- observation 5: mainly people say where they're from in the italki dataset - we'll try to train only on lang8
+- actually nevermind on lang8 it's even worse
 
 ### Observations (about the results)
 - liberals care more about interpunction? (find example and present on report?)
