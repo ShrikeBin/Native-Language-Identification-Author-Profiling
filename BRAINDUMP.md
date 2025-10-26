@@ -18,7 +18,7 @@
 - cutting long articles might have affected their usefullness (less context in a part of an article)
 - combined the languages into branches with personal heuristics, deleted ones that couldn't be passed into a bigger group and too small samle (Mongloian with 49 samples) as apoosed to (Hebrew 47 samples -> Arabic)
 - we noticed that language model was actually city/region guessing model (changing Im from Tokyo to Im from Rome in 50 word text instantly made you 70% italian) - we used spacy (NER) to map masks ([REGION][CITY]... etc) onto the train dataset to force it to generalize ai again finds a workaround xD
-- spoiler (it worked out 69% accuracy babyy)
+- spoiler (it worked out, 69% accuracy babyy) - it still kinda skews towards cities becasue we didnt remove ALL instances (like "barcelona" still shows 34 times across those 12k or so samples but thats much better)
 
 ### Technical
 - custom regression head breaks nice hf pipeline, no config.json is created, need to manually load weights with safetensors
@@ -27,6 +27,10 @@
 ### Ideas
 - idea 1: shap -> can help debug the model, check if it pays attention to meaningful things
 - can help observe natural language tendencies of people in certain groups
+- idea 2: generally transformers give context of the sentence which we don't neccesearly need (?)
+- we want to focus mainly on the way people talk, construct their sentences etc.
+- maybe there's a better approach than using transformers, detect nouns etc. / analyze sentence build differently
+- definitely might help with language recognition but NOT with things like mbti or political
 
 ### Observations (about the model)
 - observation 1: predictions are better when writer is pretending to speak to someone
