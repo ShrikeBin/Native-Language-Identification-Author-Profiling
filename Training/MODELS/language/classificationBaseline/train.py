@@ -9,10 +9,6 @@ from transformers import (
     DataCollatorWithPadding
 )
 from evaluate import load
-from peft import (
-    LoraConfig,
-    get_peft_model
-)
 
 # ===== CONFIG =====
 MODEL_NAME = "distilbert-base-uncased"
@@ -24,7 +20,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 train_df = pd.read_parquet("../../../DATA/language/train.parquet")
 test_df = pd.read_parquet("../../../DATA/language/test.parquet")
 
-# Convert labels to float for regression
+# ==== Map labels ====
 label_map = {0: "English", 1: "German", 2: "Nordic", 3: "French", 4: "Italian", 5: "Portuguese", 6: "Spanish", 7: "Russian", 8: "Polish", 9: "Other Slavic", 10: "Turkic", 11: "Chinese", 12: "Vietnamese", 13: "Koreanic", 14: "Japonic", 15: "Tai", 16: "Indonesian", 17: "Uralic", 18: "Arabic", 19: "Indo-Iranian"}
 label_map = {v: int(k) for k, v in label_map.items()}
 train_df[LABEL_COL] = train_df[LABEL_COL].map(label_map).astype(int)
@@ -40,10 +36,10 @@ def tokenize(batch):
 # ===== HuggingFace Dataset =====
 train_dataset = HFDataset.from_pandas(train_df).shuffle(seed=42)
 test_dataset = HFDataset.from_pandas(test_df)
-# Tokenize
+# ==== Tokenize ====
 train_dataset = train_dataset.map(tokenize, batched=True, num_proc=8)
 test_dataset = test_dataset.map(tokenize, batched=True, num_proc=8)
-# Rename label column
+# ==== Rename label column ====
 train_dataset = train_dataset.rename_column(LABEL_COL, "labels")
 test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 
@@ -65,7 +61,7 @@ def print_trainable_parameters(model):
             trainable_params += param.numel()
 
     print(f"\nTrainable parameters: {trainable_params:,} / {all_params:,} "
-        f"({100 * trainable_params / all_params:.2f}%)")
+        f"({100 * trainable_params / all_params:.8f}%)")
 
 print_trainable_parameters(model)
 
@@ -94,7 +90,7 @@ training_args = TrainingArguments(
     output_dir="./results",
     eval_strategy="epoch",
     save_strategy="epoch",
-    learning_rate=5e-3, # try
+    learning_rate=2e-3, # try
     per_device_train_batch_size=96,
     per_device_eval_batch_size=96,
     num_train_epochs=4,

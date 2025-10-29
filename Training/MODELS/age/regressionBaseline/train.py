@@ -8,10 +8,6 @@ from transformers import (
     DataCollatorWithPadding
 )
 from evaluate import load
-from peft import (
-    LoraConfig,
-    get_peft_model
-)
 
 # ===== CONFIG =====
 MODEL_NAME = "distilbert-base-uncased"
@@ -108,7 +104,7 @@ training_args = TrainingArguments(
     output_dir="./results",
     eval_strategy="epoch",
     save_strategy="epoch",
-    learning_rate=1e-4, # probably too small, might need to change
+    learning_rate=1e-3,
     per_device_train_batch_size=96,
     per_device_eval_batch_size=96,
     num_train_epochs=4,

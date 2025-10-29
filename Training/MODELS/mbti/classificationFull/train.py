@@ -1,6 +1,5 @@
 import torch
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from datasets import Dataset as HFDataset
 from transformers import (
     DistilBertTokenizerFast,
@@ -17,7 +16,7 @@ TEXT_COL = "text"
 LABEL_COL = "type"
 MAX_LEN = 256
 BATCH_SIZE = 96
-NUM_EPOCHS = 2
+NUM_EPOCHS = 4
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ===== Load full data =====
@@ -38,27 +37,19 @@ def tokenize(batch):
 # ===== HuggingFace Dataset =====
 train_dataset = HFDataset.from_pandas(train_df).shuffle(seed=42)
 test_dataset = HFDataset.from_pandas(test_df)
-
-# Tokenize
+# ==== Tokenize ====
 train_dataset = train_dataset.map(tokenize, batched=True, num_proc=8)
 test_dataset = test_dataset.map(tokenize, batched=True, num_proc=8)
-
-# Rename label column
+# ==== Rename label column ====
 train_dataset = train_dataset.rename_column(LABEL_COL, "labels")
 test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 
-# ⚡ Set PyTorch format
-train_dataset.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
-test_dataset.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
 
 # ===== Model =====
 model = DistilBertForSequenceClassification.from_pretrained(
     MODEL_NAME,
     num_labels=16
 )
-
-from safetensors.torch import load_file
-model.load_state_dict(load_file("./distilBERT_mbti_classification_model/model.safetensors"))
 
 # ===== Metrics =====
 accuracy = load("accuracy")

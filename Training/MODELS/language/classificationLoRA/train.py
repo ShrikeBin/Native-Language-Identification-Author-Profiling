@@ -40,10 +40,10 @@ def tokenize(batch):
 # ===== HuggingFace Dataset =====
 train_dataset = HFDataset.from_pandas(train_df).shuffle(seed=42)
 test_dataset = HFDataset.from_pandas(test_df)
-# Tokenize
+# ==== Tokenize ====
 train_dataset = train_dataset.map(tokenize, batched=True, num_proc=8)
 test_dataset = test_dataset.map(tokenize, batched=True, num_proc=8)
-# Rename label column
+# ==== Rename label column ====
 train_dataset = train_dataset.rename_column(LABEL_COL, "labels")
 test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 
@@ -56,17 +56,17 @@ model = DistilBertForSequenceClassification.from_pretrained(
 
 # ===== LoRA Config =====
 config = LoraConfig(
-    r=16,
-    lora_alpha=32,
+    r=24,               # play around with these
+    lora_alpha=48,      # keep ratio 2:1 with r though
     target_modules=["q_lin", "k_lin", "v_lin"], # typical transformer stuff
-    lora_dropout=0.1,
-    modules_to_save=["classifier"],
+    lora_dropout=0.05,
+    modules_to_save=["regressor"],
 )
 model = get_peft_model(model, config)
 
 model.print_trainable_parameters()
 
-# ===== Train Classifier Head =====
+# ===== Train Full Classifier Head =====
 for param in model.classifier.parameters():
     param.requires_grad = True
 
@@ -89,7 +89,7 @@ training_args = TrainingArguments(
     output_dir="./results",
     eval_strategy="epoch",
     save_strategy="epoch",
-    learning_rate=5e-3, # try
+    learning_rate=1e-4, # try
     per_device_train_batch_size=96,
     per_device_eval_batch_size=96,
     num_train_epochs=4,

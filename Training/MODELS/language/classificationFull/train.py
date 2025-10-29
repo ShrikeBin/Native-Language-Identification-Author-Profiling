@@ -1,6 +1,5 @@
 import torch
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from datasets import Dataset as HFDataset
 from transformers import (
     DistilBertTokenizerFast,
@@ -24,7 +23,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 train_df = pd.read_csv("../../../DATA/language/train_masked.csv")
 test_df = pd.read_parquet("../../../DATA/language/test.parquet")
 
-# Map labels
+# ==== Map labels ====
 label_map = {0: "English", 1: "German", 2: "Nordic", 3: "French", 4: "Italian", 5: "Portuguese", 6: "Spanish", 7: "Russian", 8: "Polish", 9: "Other Slavic", 10: "Turkic", 11: "Chinese", 12: "Vietnamese", 13: "Koreanic", 14: "Japonic", 15: "Tai", 16: "Indonesian", 17: "Uralic", 18: "Arabic", 19: "Indo-Iranian"}
 label_map = {v: int(k) for k, v in label_map.items()}
 train_df[LABEL_COL] = train_df[LABEL_COL].map(label_map).astype(int)
@@ -40,12 +39,10 @@ def tokenize(batch):
 # ===== HuggingFace Dataset =====
 train_dataset = HFDataset.from_pandas(train_df).shuffle(seed=42)
 test_dataset = HFDataset.from_pandas(test_df)
-
-# Tokenize
+# ==== Tokenize ====
 train_dataset = train_dataset.map(tokenize, batched=True, num_proc=8)
 test_dataset = test_dataset.map(tokenize, batched=True, num_proc=8)
-
-# Rename label column
+# ==== Rename label column ====
 train_dataset = train_dataset.rename_column(LABEL_COL, "labels")
 test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 

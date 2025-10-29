@@ -1,10 +1,8 @@
 import torch
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from datasets import Dataset as HFDataset
 from transformers import (
     DistilBertTokenizerFast,
-    DistilBertForSequenceClassification,
     Trainer,
     TrainingArguments,
     DataCollatorWithPadding
@@ -28,7 +26,6 @@ test_df = pd.read_parquet("../../../DATA/political/short_test.parquet")
 label_map = {"left": 0, "center": 1, "right": 2}
 train_df[LABEL_COL] = train_df[LABEL_COL].map(label_map).astype(float)
 test_df[LABEL_COL] = test_df[LABEL_COL].map(label_map).astype(float)
-
 
 # ===== Tokenizer =====
 tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_NAME)
