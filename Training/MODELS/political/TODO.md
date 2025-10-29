@@ -1,9 +1,15 @@
 # TODO
 
-- full fine tune (Regression head) ✅
+### Long
+
+- full fine tune ✅
+
+### Short
+
+- full fine tune ✅
 
 - full fine tune (Extract logits head) ✅
 
-- LoRA fine tune (Regression head)
+- LoRA fine tune 
 
-- baseline fine tune (Regression head)
+- baseline fine tune ✅

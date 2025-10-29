@@ -99,7 +99,6 @@ training_args = TrainingArguments(
     logging_dir="./logs_gender",
     logging_steps=5000,
     load_best_model_at_end=True,
-    metric_for_best_model="mse",
     fp16=torch.cuda.is_available(),
     gradient_accumulation_steps=2,
     report_to="none",

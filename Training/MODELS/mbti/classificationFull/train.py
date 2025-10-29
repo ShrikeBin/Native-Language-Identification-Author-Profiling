@@ -64,7 +64,7 @@ data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
 # ===== Training args =====
 training_args = TrainingArguments(
-    output_dir="./results_mbti",
+    output_dir="./results",
     eval_strategy="epoch",
     save_strategy="epoch",
     learning_rate=4e-5,
@@ -98,4 +98,4 @@ results = trainer.evaluate()
 print("Evaluation results:", results)
 
 # ===== Save model =====
-trainer.save_model("./distilBERT_mbti_classification_model")
+trainer.save_model("./model")

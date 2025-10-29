@@ -66,7 +66,7 @@ data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
 # ===== Training args =====
 training_args = TrainingArguments(
-    output_dir="./results_language",
+    output_dir="./results",
     eval_strategy="epoch",
     save_strategy="epoch",
     learning_rate=3e-5,
@@ -100,4 +100,4 @@ results = trainer.evaluate()
 print("Evaluation results:", results)
 
 # ===== Save model =====
-trainer.save_model("./distilBERT_language_classification_model")
+trainer.save_model("./model")

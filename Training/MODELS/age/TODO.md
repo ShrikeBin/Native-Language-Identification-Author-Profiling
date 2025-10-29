@@ -1,6 +1,6 @@
 # TODO
 
-- full fine tune (Regression head) ✅
+- full fine tune ✅
 
 - LoRA fine tune ✅
 
