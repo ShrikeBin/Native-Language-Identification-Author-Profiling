@@ -10,6 +10,6 @@
 
 - full fine tune (Extract logits head) ✅
 
-- LoRA fine tune 
+- LoRA fine tune ✅
 
 - baseline fine tune ✅

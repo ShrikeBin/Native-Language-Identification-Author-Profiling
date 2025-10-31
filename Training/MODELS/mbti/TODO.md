@@ -2,6 +2,6 @@
 
 - full fine tune ✅
 
-- LoRA fine tune
+- LoRA fine tune ✅
 
-- baseline fine tune
+- baseline fine tune ✅

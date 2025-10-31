@@ -3,8 +3,8 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from datasets import Dataset as HFDataset
 from transformers import (
-    DistilBertTokenizerFast,
-    DistilBertForSequenceClassification,
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
     Trainer,
     TrainingArguments,
     DataCollatorWithPadding
@@ -12,12 +12,12 @@ from transformers import (
 from evaluate import load
 
 # ===== CONFIG =====
-MODEL_NAME = "distilbert-base-uncased"
+MODEL_NAME = "roberta-base"
 TEXT_COL = "text"
 LABEL_COL = "gender"
 MAX_LEN = 256
-BATCH_SIZE = 96
-NUM_EPOCHS = 4
+BATCH_SIZE = 32
+NUM_EPOCHS = 6 # temporary
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ===== Load full data =====
@@ -31,7 +31,7 @@ test_df[LABEL_COL] = test_df[LABEL_COL].map(label_map).astype(float)
 
 
 # ===== Tokenizer =====
-tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 def tokenize(batch):
     texts = [str(t) for t in batch[TEXT_COL]]
@@ -55,18 +55,18 @@ test_dataset.set_format("torch", columns=["input_ids", "attention_mask", "labels
 
 # ===== Model =====
 # single output for regression
-from transformers import DistilBertModel
+from transformers import RobertaModel
 from torch import nn
 
-class DistilBertRegression(nn.Module):
+class RoBertRegression(nn.Module):
     def __init__(self, model_name):
         super().__init__()
-        self.bert = DistilBertModel.from_pretrained(model_name)
+        self.bert = RobertaModel.from_pretrained(model_name)
         self.regressor = nn.Linear(self.bert.config.hidden_size, 1)
 
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        hidden_state = outputs.last_hidden_state[:,0,:]  # [CLS] token
+        hidden_state = outputs.last_hidden_state[:,0,:]  # <s> token
         logits = self.regressor(hidden_state).squeeze(-1)  # shape: (batch,)
         loss = None
         if labels is not None:
@@ -74,7 +74,7 @@ class DistilBertRegression(nn.Module):
             loss = loss_fn(logits, labels)
         return {"loss": loss, "logits": logits}
 
-model = DistilBertRegression(MODEL_NAME)
+model = RoBertRegression(MODEL_NAME)
 
 # ===== Metrics =====
 mse = load("mse")
@@ -100,7 +100,7 @@ training_args = TrainingArguments(
     logging_steps=5000,
     load_best_model_at_end=True,
     fp16=torch.cuda.is_available(),
-    gradient_accumulation_steps=2,
+    gradient_accumulation_steps=3,
     report_to="none",
 )
 

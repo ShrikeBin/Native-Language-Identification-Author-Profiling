@@ -21,6 +21,10 @@
 - spoiler (it worked out, 69% accuracy babyy) - it still kinda skews towards cities becasue we didnt remove ALL instances (like "barcelona" still shows 34 times across those 12k or so samples but thats much better)
 - we increased learnable parameters in LoRA to around 1% that imporved the results and still yielded 100x decrease in size
 - in LoRA we used learning rate significantly higher compared to full fine tune
+- we tried using roberta - another encoder and all mpnet v2 (sentence transformer or smth idk) for language as an experiment
+- read online that roberta is good for syntactic while mpnet good for semantic -> we'll see on the evals, roberta performs much better on language compared to disttillbert for the cost of 2x the size
+- mpnet sucks ass at classyfying languages - maybe something to do about that semantic specialization?
+- mpnet oficially performed worse than distillbert
 
 ### Technical
 - custom regression head breaks nice hf pipeline, no config.json is created, need to manually load weights with safetensors
