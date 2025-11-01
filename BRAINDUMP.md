@@ -25,6 +25,8 @@
 - read online that roberta is good for syntactic while mpnet good for semantic -> we'll see on the evals, roberta performs much better on language compared to disttillbert for the cost of 2x the size
 - mpnet sucks ass at classyfying languages - maybe something to do about that semantic specialization?
 - mpnet oficially performed worse than distillbert
+- on gender (distillbert regression 0.5 round up is 76.5% accuracy) (roberta regression 0.5 round up is 77.3% accuracy)
+- on language (distilbert 69%) (roberta 82%)
 
 ### Technical
 - custom regression head breaks nice hf pipeline, no config.json is created, need to manually load weights with safetensors
