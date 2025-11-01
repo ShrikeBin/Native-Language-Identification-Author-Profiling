@@ -41,6 +41,7 @@
 - we want to focus mainly on the way people talk, construct their sentences etc.
 - maybe there's a better approach than using transformers, detect nouns etc. / analyze sentence build differently
 - definitely might help with language recognition but NOT with things like mbti or political
+- idea 3: figure out shap text plots, might help with detecting writing tendencies of different minorities
 
 ### Observations (about the model)
 - observation 1: predictions are better when writer is pretending to speak to someone
@@ -60,3 +61,4 @@
 - liberals care more about interpunction? (find example and present on report?)
 - women are nicer
 - etc.
+- for some reason poles are consistently misjudged as spanish (similar sentence build? / implicit subject)
