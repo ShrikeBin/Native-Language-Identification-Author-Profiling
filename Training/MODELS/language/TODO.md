@@ -10,4 +10,6 @@
 
 - roberta-base ✅
 
+- roberta-large ✅
+
 - all-mpnet-base-v2 ✅

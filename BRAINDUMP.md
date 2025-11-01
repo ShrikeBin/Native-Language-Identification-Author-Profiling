@@ -26,7 +26,9 @@
 - mpnet sucks ass at classyfying languages - maybe something to do about that semantic specialization?
 - mpnet oficially performed worse than distillbert
 - on gender (distillbert regression 0.5 round up is 76.5% accuracy) (roberta regression 0.5 round up is 77.3% accuracy)
-- on language (distilbert 69%) (roberta 82%)
+- on language (distilbert 69%) (roberta 74%)
+- we suspect that in terms of language going even bigger (syntax focused tho) in terms of model could yield even better results
+- yup we got 79.9 % accuracy on roberta large
 
 ### Technical
 - custom regression head breaks nice hf pipeline, no config.json is created, need to manually load weights with safetensors
@@ -50,6 +52,9 @@
 - maybe baseline is left and it just increases from there -> switch from regression to classification?
 - observation 5: mainly people say where they're from in the italki dataset - we'll try to train only on lang8
 - actually nevermind on lang8 it's even worse
+- observation 6: RoBERTLarge is better than other models when no country is mentioned in text
+- when a country is mentioned it sticks to it a lot though
+- observation 7: LoRA seems to be working worse than fft or baseline with mbti
 
 ### Observations (about the results)
 - liberals care more about interpunction? (find example and present on report?)
