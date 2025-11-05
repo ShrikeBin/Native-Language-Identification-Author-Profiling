@@ -1,7 +1,7 @@
 import torch
 import shap
 import numpy as np
-from Training.TESTING.shap.regression_head import (
+from Testing.shap.regression_head import (
     DistilBertRegression,
     RoBertRegression
 )
@@ -122,19 +122,35 @@ class Model:
                     prediction_string += f"{self.label_map[round(pred)]} ({pred:.2f})"
         return prediction_string
     
-    def explain(self, text):
+    def explanation_string(self, text):
 
         # === Inference ===
-        pred = self.predict([text])[0]
         shap_values = self.explainer([text])
 
         # === Customized Explanation ===
+        tokens = shap_values.data[0]
         match self.type:
             case 'classification':
-                pred = np.argmax(pred)
-                return shap_values.base_values[0][pred], shap_values.values[0][:,pred], shap_values.data[0]
+                pred = np.argmax(self.predict([text])[0])
+                values = shap_values.values[0][:,pred]
             case _:
-                return shap_values.base_values[0], shap_values.values[0], shap_values.data[0]
+                values = shap_values.values[0]
+
+        max_blue = min(values)
+        max_red = max(values)
+
+        explanation_string = "".join(["\x1b[48;2;" + str(max(round(200 * value / max_red), 0)) + ";0;" + str(max(round(200 * value / max_blue), 0)) + "m" + token 
+                                      for token, value in zip(tokens, values)]) + "\x1b[48;2;0;0;0m"
+
+        return explanation_string
+
+        # === Customized Explanation ===
+        # match self.type:
+        #     case 'classification':
+        #         pred = np.argmax(pred)
+        #         return shap_values.base_values[0][pred], shap_values.values[0][:,pred], shap_values.data[0]
+        #     case _:
+        #         return shap_values.base_values[0], shap_values.values[0], shap_values.data[0]
 
 # ===== Load Models =====
 def load_models():
