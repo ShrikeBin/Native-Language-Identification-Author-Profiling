@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from datasets import Dataset as HFDataset
 from transformers import (
-    DistilBertTokenizerFast,
+    AutoTokenizer,
     Trainer,
     TrainingArguments,
     DataCollatorWithPadding
@@ -25,7 +25,7 @@ test_df[LABEL_COL] = test_df[LABEL_COL].map(label_map).astype(float)
 
 
 # ===== Tokenizer =====
-tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 def tokenize(batch):
     texts = [str(t) for t in batch[TEXT_COL]]
@@ -42,18 +42,18 @@ test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 
 # ===== Model =====
 # single output for regression
-from transformers import DistilBertModel
+from transformers import AutoModel
 from torch import nn
 
-class DistilBertRegression(nn.Module):
+class CustomRegression(nn.Module):
     def __init__(self, model_name):
         super().__init__()
-        self.bert = DistilBertModel.from_pretrained(model_name)
+        self.bert = AutoModel.from_pretrained(model_name)
         self.regressor = nn.Linear(self.bert.config.hidden_size, 1)
 
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        hidden_state = outputs.last_hidden_state[:,0,:]  # [CLS] token
+        hidden_state = outputs.last_hidden_state[:,0,:]  # <s> token
         logits = self.regressor(hidden_state).squeeze(-1)  # shape: (batch,)
         loss = None
         if labels is not None:
@@ -61,11 +61,11 @@ class DistilBertRegression(nn.Module):
             loss = loss_fn(logits, labels)
         return {"loss": loss, "logits": logits}
 
-model = DistilBertRegression(MODEL_NAME)
+model = CustomRegression(MODEL_NAME)
 
-from safetensors.torch import load_file
-model.load_state_dict(load_file("model/model.safetensors"))
+from peft import PeftModel
 
+model = PeftModel.from_pretrained(model, "./model")
 model.to(DEVICE)
 
 # ===== Metrics =====
@@ -84,7 +84,7 @@ trainer = Trainer(
     model=model,
     args=TrainingArguments(
         output_dir="accuracy_classification_style",
-        per_device_eval_batch_size=128
+        per_device_eval_batch_size=48
     ),
     eval_dataset=test_dataset,
     data_collator=data_collator,

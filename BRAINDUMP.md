@@ -29,6 +29,10 @@
 - on language (distilbert 69%) (roberta 74%)
 - we suspect that in terms of language going even bigger (syntax focused tho) in terms of model could yield even better results
 - yup we got 79.9 % accuracy on roberta large
+- maybe try some other optimizer not AdamW, but its probably data limitation tbh
+- using JUST convolutional layer on tokenizer yielded 67% accuracy (CustomCNN([512, 128], kernels=(3, 2)))
+- maybe combine tokenizer syntax analysis with transformer output in a linear layer to reach both good semantic and syntactic classification
+- apparently on roberta tokenizer convolutional layer on tokenizer yielded 69.7% (MORE than Disillbert) accuracy (CustomCNN([512, 128], kernels=(3, 2)))
 
 ### Technical
 - custom regression head breaks nice hf pipeline, no config.json is created, need to manually load weights with safetensors

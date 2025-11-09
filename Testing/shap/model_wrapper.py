@@ -1,9 +1,10 @@
 import torch
 import shap
 import numpy as np
-from Testing.shap.regression_head import (
-    DistilBertRegression,
-    RoBertRegression
+from Testing.shap.custom_head import (
+    CustomRegression,
+    CustomConvolution,
+    CustomCNN,
 )
 from transformers import (
     AutoTokenizer,
@@ -16,11 +17,10 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ===== Train Model Maps =====
 model_maps = {
-    'Full': "distilbert-base-uncased",
-    'LoRA': "distilbert-base-uncased",
-    'Baseline': "distilbert-base-uncased",
+    'DistilBERT': "distilbert-base-uncased",
     'RoBERT': "roberta-base",
     'RoBERTLarge': "roberta-large",
+    'DeBerta': "microsoft/deberta-v3-large",
     'MpNet': "sentence-transformers/all-mpnet-base-v2",
 }
 
@@ -35,36 +35,39 @@ label_maps = {
 # ===== Model Wrapper =====
 from safetensors.torch import load_file
 class Model:
-    def __init__(self, trait_name, head_type, train):
+    def __init__(self, trait_name, head_type, model='DistilBERT', train='Full'):
 
         # === Basic Config ===
-        self.name = f"{trait_name} ({train})"
+        self.name = f"{trait_name} ({model} {head_type} {train})"
         self.type = head_type
-        self.tokenizer = AutoTokenizer.from_pretrained(model_maps[train])
+        self.tokenizer = AutoTokenizer.from_pretrained(model_maps[model])
         self.label_map = label_maps.get(trait_name, None)
 
         # === Model Base ===
-        path = f"Training/MODELS/{trait_name}/{head_type}{train}/model"
-        match head_type:
+        path = f"Training/MODELS/{trait_name}/{head_type}{model if model != 'DistilBERT' else ''}{train if model == 'DistilBERT' or train != 'Full' else ''}/model"
+        
+        if head_type in ['classification', 'classreg']:
             # Transformers Classifiers
-            case 'classification' | 'classreg':
-                self.model = AutoModelForSequenceClassification.from_pretrained(path)
-            # Custom Regression Head
-            case 'regression':
-                match train:
-                    case 'RoBERT':
-                        self.model = RoBertRegression(model_maps[train])
-                    case _:
-                        self.model = DistilBertRegression(model_maps[train])
-                # Load State Dict or LoRA adapters by hand
-                match train:
-                    case 'LoRA':
-                        self.model = PeftModel.from_pretrained(self.model, path)
-                        self.model.merge_adapter()
-                    case _:
-                        self.model.load_state_dict(load_file(f"{path}/model.safetensors"))
-            case _:
-                raise KeyError(f"Unknown head type: {head_type}")
+            classes = len(self.label_map) if head_type == 'classification' else 1
+            self.model = AutoModelForSequenceClassification.from_pretrained(path, num_labels=classes)
+        else:
+            # Custom Head
+            match head_type:
+                case 'regression':
+                    self.model = CustomRegression(model_maps[model])
+                case 'convolution':
+                    self.model = CustomConvolution(model_maps[model], num_classes=len(self.label_map))
+                case 'customCNN':
+                    self.model = CustomCNN([512, 256], kernels=(3, 2), classes=20, dropout=0.25, embedding_model=model_maps[model])
+                case _:
+                    raise KeyError(f"Unknown head type: {head_type}")
+            
+            # Custom State Dict
+            if train == 'LoRA':
+                self.model = PeftModel.from_pretrained(self.model, path)
+                self.model.merge_adapter()
+            else:
+                self.model.load_state_dict(load_file(f"{path}/model.safetensors"))
 
         # === Prepare Model for Inference ===
         self.model.to(DEVICE)
@@ -92,7 +95,7 @@ class Model:
 
         # === Customized Output ===
         match self.type:
-            case 'classification':
+            case 'classification' | 'convolution' | 'customCNN':
                 output = torch.softmax(output, dim=-1)
             case 'classreg':
                 output = output.squeeze(-1)
@@ -109,7 +112,7 @@ class Model:
 
         # === Customized String ===
         match self.type:
-            case 'classification':
+            case 'classification' | 'convolution' | 'customCNN':
                 labels = np.argsort(pred)[::-1]
                 probs = pred[labels]
                 last_index = np.searchsorted(np.cumsum(probs), 0.5) + 1
@@ -130,7 +133,7 @@ class Model:
         # === Customized Explanation ===
         tokens = shap_values.data[0]
         match self.type:
-            case 'classification':
+            case 'classification' | 'convolution' | 'customCNN':
                 pred = np.argmax(self.predict([text])[0])
                 values = shap_values.values[0][:,pred]
             case _:
@@ -140,23 +143,7 @@ class Model:
         max_red = max(values)
 
         explanation_string = "".join(["\x1b[48;2;" + str(max(round(200 * value / max_red), 0)) + ";0;" + str(max(round(200 * value / max_blue), 0)) + "m" + token 
-                                      for token, value in zip(tokens, values)]) + "\x1b[48;2;0;0;0m"
+                                      for token, value in zip(tokens, values)]) + "\x1b[0m"
 
         return explanation_string
-
-        # === Customized Explanation ===
-        # match self.type:
-        #     case 'classification':
-        #         pred = np.argmax(pred)
-        #         return shap_values.base_values[0][pred], shap_values.values[0][:,pred], shap_values.data[0]
-        #     case _:
-        #         return shap_values.base_values[0], shap_values.values[0], shap_values.data[0]
-
-# ===== Load Models =====
-def load_models():
-    models = [
-        Model('gender', 'regression', 'Full'),
-        Model('gender', 'regression', 'RoBERT'),
-    ]
-    return models
     
