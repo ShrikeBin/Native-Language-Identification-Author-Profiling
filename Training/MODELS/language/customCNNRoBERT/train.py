@@ -15,7 +15,7 @@ TEXT_COL = "text"
 LABEL_COL = "language"
 MAX_LEN = 256
 BATCH_SIZE = 128
-NUM_EPOCHS = 4
+NUM_EPOCHS = 5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ===== Load full data =====
@@ -48,9 +48,29 @@ test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 # ===== Model =====
 from cnn import CustomCNN
 
-model = CustomCNN([512, 256], kernels=(3, 2), classes=20, dropout=0.25, embedding_model=MODEL_NAME)
+model = CustomCNN(num_classes=20)
 model.to(DEVICE)
 
+# ===== Params ====
+def print_trainable_parameters(model):
+    trainable_params = 0
+    all_params = 0
+
+    for param in model.parameters():
+        all_params += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+
+    print(f"\nTrainable parameters: {trainable_params:,} / {all_params:,} "
+        f"({100 * trainable_params / all_params:.8f}%)")
+
+print_trainable_parameters(model)
+
+for param in model.embed.parameters():
+    param.requires_grad = False
+
+print_trainable_parameters(model)
+    
 # ===== Metrics =====
 accuracy = load("accuracy")
 def compute_metrics(eval_pred):

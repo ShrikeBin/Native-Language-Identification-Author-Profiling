@@ -33,6 +33,11 @@
 - using JUST convolutional layer on tokenizer yielded 67% accuracy (CustomCNN([512, 128], kernels=(3, 2)))
 - maybe combine tokenizer syntax analysis with transformer output in a linear layer to reach both good semantic and syntactic classification
 - apparently on roberta tokenizer convolutional layer on tokenizer yielded 69.7% (MORE than Disillbert) accuracy (CustomCNN([512, 128], kernels=(3, 2)))
+- TODO -> what about concatenation roBERTa fine tuned output with our 70% cnn layer, putting throu one linear layer and training it as baseline?
+- freezing the embedding layer didn't make a difference
+- just training the convolution layer yielded accuracy 73%
+- we trying roberta + cnn with clasifier on top, 1 epoch 77%
+
 
 ### Technical
 - custom regression head breaks nice hf pipeline, no config.json is created, need to manually load weights with safetensors

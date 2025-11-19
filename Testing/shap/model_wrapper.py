@@ -4,8 +4,9 @@ import numpy as np
 from Testing.shap.custom_head import (
     CustomRegression,
     CustomConvolution,
-    CustomCNN,
+    # CustomCNN,
 )
+from Training.MODELS.language.customCNNRoBERT.cnn import CustomCNN
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification
@@ -58,7 +59,7 @@ class Model:
                 case 'convolution':
                     self.model = CustomConvolution(model_maps[model], num_classes=len(self.label_map))
                 case 'customCNN':
-                    self.model = CustomCNN([512, 256], kernels=(3, 2), classes=20, dropout=0.25, embedding_model=model_maps[model])
+                    self.model = CustomCNN([1024, 2048], kernels=(1, 3), classes=20, dropout=0.4, embedding_model=model_maps[model])
                 case _:
                     raise KeyError(f"Unknown head type: {head_type}")
             
@@ -142,7 +143,7 @@ class Model:
         max_blue = min(values)
         max_red = max(values)
 
-        explanation_string = "".join(["\x1b[48;2;" + str(max(round(200 * value / max_red), 0)) + ";0;" + str(max(round(200 * value / max_blue), 0)) + "m" + token 
+        explanation_string = "".join(["\x1b[48;2;" + str(max(round(255 * value / max_red), 0)) + ";0;" + str(max(round(255 * value / max_blue), 0)) + "m" + token 
                                       for token, value in zip(tokens, values)]) + "\x1b[0m"
 
         return explanation_string
