@@ -9,8 +9,8 @@ Project focused on recognition of individual traits based on English writing usi
 * [Project Structure](#project-structure)
 * [Data](#data)
 * [Training](#training)
-* [Testing & SHAP](#testing--evaluation)
-* [Usage](#app)
+* [Testing & SHAP](#testing-shap)
+* [Usage & Requirements](#usage-requirements)
 * [Results](#results)
 * [Screenshots](#screenshots)
 * [License](#license)
@@ -126,17 +126,33 @@ Testing/
 
 ---
 
-## Testing & SHAP
+## Testing SHAP
 
 * Use `Testing/shap/run.ipynb` to evaluate model predictions using SHAP.
 * Old run results stored in `Testing/RUNS/<task>/<run>.ipynb` as reference.
 
 ---
 
-## Usage
+## Usage Requirements
 
 * `App/` folder contains the scripts neccesary to train and run recommended models when cloning this repository.
 * This code allows users to play around with our project without diving to deep in the technicals.
+
+* Overall system requirements aside from a decent GPU are as follows:
+```
+Python >= 3.10
+PyTorch (torch) with CUDA support
+CUDA toolkit
+Transformers (Hugging Face)
+Pandas
+NumPy
+scikit-learn
+spaCy
+SHAP
+tqdm
+Matplotlib (for plotting)
+Jupyter Notebook (optional, for notebooks)
+```
 
 ---
 
