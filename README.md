@@ -179,7 +179,7 @@ Jupyter Notebook (optional, for notebooks)
 
 * Here we show some screenshots of the working prediction models:
 
-| Screenshots|
+| Screenshots (PLACEHOLDERS FOR NOW)|
 |------------------------|
 |![](Assets/screenshots/1.png)|
 |------------------------|
