@@ -1,5 +1,7 @@
 # Recommended Models To Train:
 
+Model training scripts were optimized to work on RTX 3060ti with 8gb of VRAM
+
 ### Age:
 - DistillBERT Full Fine Tune
 

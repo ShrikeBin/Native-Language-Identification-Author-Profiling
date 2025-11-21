@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from transformers import AutoModel
 
+# CNN -> Convolutional Neural Network
 class CustomCNN(nn.Module):
     def __init__(self, num_classes=1):
         super().__init__()

@@ -4,10 +4,7 @@ import numpy as np
 from Testing.shap.custom_head import (
     CustomRegression,
     CustomConvolution,
-    RobertCNN,
-    MixedClassifier
 )
-from Training.MODELS.language.customCNNRoBERT.cnn import CustomCNN
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification
@@ -20,9 +17,9 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # ===== Train Model Maps =====
 model_maps = {
     'DistilBERT': "distilbert-base-uncased",
-    'RoBERT': "roberta-base",
-    'RoBERTLarge': "roberta-large",
-    'DeBerta': "microsoft/deberta-v3-large",
+    'RoBERTa': "roberta-base",
+    'RoBERTaLarge': "roberta-large",
+    'DeBERTa': "microsoft/deberta-v3-large",
     'MpNet': "sentence-transformers/all-mpnet-base-v2",
 }
 
@@ -46,7 +43,7 @@ class Model:
         self.label_map = label_maps.get(trait_name, None)
 
         # === Model Base ===
-        path = f"Training/MODELS/{trait_name}/{head_type}{model if model != 'DistilBERT' else ''}{train if model == 'DistilBERT' or train != 'Full' else ''}/model"
+        path = f"Training/MODELS/{trait_name}/{model}{head_type}{train}/model"
         
         if head_type in ['classification', 'classreg']:
             # Transformers Classifiers
@@ -62,7 +59,7 @@ class Model:
                 case 'customCNN':
                     raise KeyError("Custom CNN not supported for now")
                     self.model = RobertCNN(num_classes=20)
-                case 'mixedCNN':
+                case 'mixed': # aaaa idk what is happenin
                     self.model = MixedClassifier(num_classes=len(self.label_map))
                 case _:
                     raise KeyError(f"Unknown head type: {head_type}")

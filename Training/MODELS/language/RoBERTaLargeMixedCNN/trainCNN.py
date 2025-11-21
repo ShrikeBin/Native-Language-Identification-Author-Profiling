@@ -51,7 +51,7 @@ class MixedClassifier(nn.Module):
     def __init__(self, num_classes = 20):
         super().__init__()
         
-        self.robert = RobertaForSequenceClassification.from_pretrained("../classificationRoBERTLarge/model")
+        self.robert = RobertaForSequenceClassification.from_pretrained("../RoBERTaLargeClassificationFull/model")
         self.cnn = RobertCNN(self.robert, num_classes=num_classes)
         
         from safetensors.torch import load_file
@@ -119,8 +119,7 @@ train_dataset = train_dataset.rename_column(LABEL_COL, "labels")
 test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 
 # ===== Model =====
-model = RobertCNN(RobertaForSequenceClassification.from_pretrained("../classificationRoBERTLarge/model"),num_classes=20)
-#model = MixedClassifier(num_classes=20)
+model = RobertCNN(RobertaForSequenceClassification.from_pretrained("../RoBERTaLargeClassificationFull/model"),num_classes=20)
 model.to(DEVICE)
 
 # ===== Params ====
