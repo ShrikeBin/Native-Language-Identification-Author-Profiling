@@ -23,9 +23,9 @@ Project focused on recognition of individual traits based on English writing usi
 .
 ├── App/                   # How to run it yourself in a Nutshell
 ├── Assets/                # Images, Screenshots
-├── ACCURACIES.md          # Summary of model evaluation results
 ├── Testing/               # Evaluation scripts, notebooks, and test runs of models
 ├── Training/              # Everything related to model training
+├── ACCURACIES.md          # Summary of model evaluation results
 └── README.md
 ```
 
@@ -94,9 +94,8 @@ Organized by prediction task:
 
 ```
 Testing/
-├── accuracy.ipynb         # Notebook for computing evaluation metrics
 ├── RUNS/                  # Results from previous runs per task
-├── shap/                  # Scripts and notebooks for SHAP explainability
+├── shap/                  # Scripts and notebooks needed for shap runs
 └── TODO.md
 ```
 
@@ -122,7 +121,8 @@ Testing/
 ## Training
 
 * Models are organized by task in `Training/MODELS`.
-* Pretrained or baseline versions are available alongside LoRA/finetuned variants.
+* Different variants are trained for different tasks.
+* Each folder contains a `train.py` script responsible for training its model.
 
 ---
 
