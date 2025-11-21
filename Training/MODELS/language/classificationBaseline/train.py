@@ -17,7 +17,7 @@ LABEL_COL = "language"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ===== Load full data =====
-train_df = pd.read_parquet("../../../DATA/language/train.parquet")
+train_df = pd.read_parquet("../../../DATA/language/train_masked.parquet")
 test_df = pd.read_parquet("../../../DATA/language/test.parquet")
 
 # ==== Map labels ====

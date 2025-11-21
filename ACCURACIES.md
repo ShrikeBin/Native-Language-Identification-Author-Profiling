@@ -25,6 +25,8 @@
 |                                   | RoBERTa - Full Fine-tuned        | *74,1%*      |
 |                                   | RoBERTa-Large - Full Fine-tuned  | *79,9%*      |
 |                                   | CNN on RoBERTa embedder          | *74,1%*      |
+|                                   | CNN + RoBERTa Classifier         | *77,3%*      |
+|                                   | CNN + RoBERTaLarge Classofier    | *81,0%*      |
 |-----------------------------------|----------------------------------|--------------|
 
 

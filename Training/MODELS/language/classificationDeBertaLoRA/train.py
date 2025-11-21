@@ -20,7 +20,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 8
 
 # ===== Load data =====
-train_df = pd.read_parquet("../../../DATA/language/train.parquet")
+train_df = pd.read_parquet("../../../DATA/language/train_masked.parquet")
 test_df = pd.read_parquet("../../../DATA/language/test.parquet")
 
 label_map = {0: "English", 1: "German", 2: "Nordic", 3: "French", 4: "Italian", 5: "Portuguese",

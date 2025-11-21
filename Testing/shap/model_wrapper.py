@@ -4,7 +4,8 @@ import numpy as np
 from Testing.shap.custom_head import (
     CustomRegression,
     CustomConvolution,
-    # CustomCNN,
+    RobertCNN,
+    MixedClassifier
 )
 from Training.MODELS.language.customCNNRoBERT.cnn import CustomCNN
 from transformers import (
@@ -59,7 +60,10 @@ class Model:
                 case 'convolution':
                     self.model = CustomConvolution(model_maps[model], num_classes=len(self.label_map))
                 case 'customCNN':
-                    self.model = CustomCNN([1024, 2048], kernels=(1, 3), classes=20, dropout=0.4, embedding_model=model_maps[model])
+                    raise KeyError("Custom CNN not supported for now")
+                    self.model = RobertCNN(num_classes=20)
+                case 'mixedCNN':
+                    self.model = MixedClassifier(num_classes=len(self.label_map))
                 case _:
                     raise KeyError(f"Unknown head type: {head_type}")
             
@@ -96,7 +100,7 @@ class Model:
 
         # === Customized Output ===
         match self.type:
-            case 'classification' | 'convolution' | 'customCNN':
+            case 'classification' | 'convolution' | 'customCNN' | 'mixedCNN':
                 output = torch.softmax(output, dim=-1)
             case 'classreg':
                 output = output.squeeze(-1)
@@ -113,7 +117,7 @@ class Model:
 
         # === Customized String ===
         match self.type:
-            case 'classification' | 'convolution' | 'customCNN':
+            case 'classification' | 'convolution' | 'customCNN' | 'mixedCNN':
                 labels = np.argsort(pred)[::-1]
                 probs = pred[labels]
                 last_index = np.searchsorted(np.cumsum(probs), 0.5) + 1
@@ -134,7 +138,7 @@ class Model:
         # === Customized Explanation ===
         tokens = shap_values.data[0]
         match self.type:
-            case 'classification' | 'convolution' | 'customCNN':
+            case 'classification' | 'convolution' | 'customCNN' | 'mixedCNN':
                 pred = np.argmax(self.predict([text])[0])
                 values = shap_values.values[0][:,pred]
             case _:

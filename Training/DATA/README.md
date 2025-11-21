@@ -17,6 +17,8 @@
   - italki Corpus
   - lang8 Corpus
   - Data found on [GitHub](https://github.com/Tejas-Nanaware/Native-Language-Identification/tree/master) with similar project (undetermined source)
+- **MASKED**:
+  - is the same data but with masked region/city names using NER to improve on accuracy
 
 ### MBTI
 - **COMBINED**:

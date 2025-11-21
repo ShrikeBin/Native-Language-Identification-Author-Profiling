@@ -13,3 +13,6 @@ A repository for datasets and code related to author profiling and native langua
 - **Resources/**: Contains additional resources, references, etc.
 
 - **App/**: Contains code for deploying the trained models as pygame gui profiler
+
+**shasum -a 256 NLI-Author-Profiling-DATA.zip**
+b4e0116682413369213b8885fc1f5ff91e73ef95b1215e88dbe75689dca047eb  NLI-Author-Profiling-DATA.zip
