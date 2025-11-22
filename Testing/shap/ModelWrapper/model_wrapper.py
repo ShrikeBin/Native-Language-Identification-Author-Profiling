@@ -1,15 +1,12 @@
 import torch
 import shap
 import numpy as np
-from Testing.shap.ModelWrapper.custom_head import (
-    CustomRegression,
-    CustomConvolution,
-)
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification
 )
 from peft import PeftModel
+import importlib
 
 # ===== Device =====
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,7 +29,6 @@ label_maps = {
 }
 
 # ===== Model Wrapper =====
-from safetensors.torch import load_file
 class Model:
     def __init__(self, trait_name, head_type, model='DistilBERT', train='Full'):
 
@@ -45,22 +41,21 @@ class Model:
         # === Model Base ===
         path = f"Training/MODELS/{trait_name}/{model}{head_type}{train}/model"
         
-        if head_type in ['classification', 'classreg']:
-            # Transformers Classifiers
-            classes = len(self.label_map) if head_type == 'classification' else 1
-            self.model = AutoModelForSequenceClassification.from_pretrained(path, num_labels=classes)
-        else:
-            # Custom Head
+        if head_type == 'Classification': # Transformers Classifiers
+            self.model = AutoModelForSequenceClassification.from_pretrained(path, num_labels=len(self.label_map))
+        else: # Custom Head
+            head_module_path = f"Testing.shap.ModelWrapper.custom_heads.{head_type}"
             match head_type:
-                case 'regression':
+                case 'Regression':
+                    head_module = importlib.import_module(head_module_path)
+                    CustomRegression = getattr(head_module, "CustomRegression")
                     self.model = CustomRegression(model_maps[model])
-                case 'convolution':
-                    self.model = CustomConvolution(model_maps[model], num_classes=len(self.label_map))
-                case 'customCNN':
-                    raise KeyError("Custom CNN not supported for now")
-                    self.model = RobertCNN(num_classes=20)
-                case 'mixed': # aaaa idk what is happenin
-                    self.model = MixedClassifier(num_classes=len(self.label_map))
+                case 'MixedCNN':
+                    head_module = importlib.import_module(f"{head_module_path}.{model}")
+                    MixedClassifier = getattr(head_module, "MixedClassifier")
+                    model_path = f"Training/MODELS/{trait_name}/{model}ClassificationFull/model"
+                    cnn_path = f"Training/MODELS/{trait_name}/{model}{head_type}{train}/CNN/model.safetensors"
+                    self.model = MixedClassifier(model_path, cnn_path, num_classes=len(self.label_map))
                 case _:
                     raise KeyError(f"Unknown head type: {head_type}")
             
@@ -69,6 +64,7 @@ class Model:
                 self.model = PeftModel.from_pretrained(self.model, path)
                 self.model.merge_adapter()
             else:
+                from safetensors.torch import load_file
                 self.model.load_state_dict(load_file(f"{path}/model.safetensors"))
 
         # === Prepare Model for Inference ===
@@ -78,8 +74,7 @@ class Model:
         # === Shap Explainer ===
         self.explainer = shap.Explainer(
             self.predict,
-            shap.maskers.Text(self.tokenizer),
-            output_names=(list(self.label_map.values()) if head_type == 'classification' else None)
+            shap.maskers.Text(self.tokenizer)
         )
 
         print(f"Initialized model {self.name}")
@@ -97,10 +92,10 @@ class Model:
 
         # === Customized Output ===
         match self.type:
-            case 'classification' | 'convolution' | 'customCNN' | 'mixedCNN':
+            case 'Classification' | 'MixedCNN':
                 output = torch.softmax(output, dim=-1)
-            case 'classreg':
-                output = output.squeeze(-1)
+            # case 'classreg':
+            #     output = output.squeeze(-1)
             
         return output.numpy()
 
@@ -114,13 +109,13 @@ class Model:
 
         # === Customized String ===
         match self.type:
-            case 'classification' | 'convolution' | 'customCNN' | 'mixedCNN':
+            case 'Classification' | 'MixedCNN':
                 labels = np.argsort(pred)[::-1]
                 probs = pred[labels]
                 last_index = np.searchsorted(np.cumsum(probs), 0.5) + 1
                 for i in range(last_index):
                     prediction_string += f"{self.label_map[labels[i]]} ({100 * probs[i]:.2f}%) "
-            case 'regression' | 'classreg':
+            case 'Regression':
                 if self.label_map == None:
                     prediction_string += f"{pred:.2f}"
                 else:
@@ -135,7 +130,7 @@ class Model:
         # === Customized Explanation ===
         tokens = shap_values.data[0]
         match self.type:
-            case 'classification' | 'convolution' | 'customCNN' | 'mixedCNN':
+            case 'Classification' | 'MixedCNN':
                 pred = np.argmax(self.predict([text])[0])
                 values = shap_values.values[0][:,pred]
             case _:
