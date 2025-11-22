@@ -1,7 +1,7 @@
 import torch
 import shap
 import numpy as np
-from Testing.shap.custom_head import (
+from Testing.shap.ModelWrapper.custom_head import (
     CustomRegression,
     CustomConvolution,
 )

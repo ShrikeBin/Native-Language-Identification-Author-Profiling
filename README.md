@@ -45,39 +45,39 @@ Training/
 
 ```
 MODELS/
-├── age
-│   ├── DistilBERTRegressionBaseline
-│   ├── DistilBERTRegressionFull
-│   └── DistilBERTRegressionLoRa
-├── gender
-│   ├── DistilBERTClassificationFull
-│   ├── DistilBERTRegressionBaseline
-│   ├── DistilBERTRegressionFull
-│   ├── DistilBERTRegressionLoRA
-│   └── RoBERTaRegressionFull
-├── language
-│   ├── CNN
-│   ├── DeBERTaClassificationLoRA
-│   ├── DistilBERTClassificationBaseline
-│   ├── DistilBERTClassificationFull
-│   ├── DistilBERTClassificationFullCNNHead
-│   ├── DistilBERTClassificationLoRA
-│   ├── MpNetClassificationFull
-│   ├── RoBERTaClassificationFull
-│   ├── RoBERTaClassificationFullCNNHead
-│   ├── RoBERTaLargeClassificationFull
-│   ├── RoBERTaLargeMixedCNN
-│   └── RoBERTaMixedCNN
-├── mbti
-│   ├── DistilBERTClassificationBaseline
-│   ├── DistilBERTClassificationFull
-│   └── DistilBERTClassificationLoRA
-└── political
-    ├── DistilBERTRegressionBaseline
-    ├── DistilBERTRegressionFull
-    ├── DistilBERTRegressionFullLongText
-    ├── DistilBERTRegressionFullRawLogits
-    └── DistilBERTRegressionLoRA
+├── age/
+│   ├── DistilBERTRegressionBaseline/        # Only final regression layer trained
+│   ├── DistilBERTRegressionFull/            # Fully fine-tuned
+│   └── DistilBERTRegressionLoRa/            # LoRA (efficient low-rank adaptation)
+├── gender/
+│   ├── DistilBERTClassificationFull/        # Fully fine-tuned
+│   ├── DistilBERTRegressionBaseline/        # Only final regression layer trained
+│   ├── DistilBERTRegressionFull/            # Fully fine-tuned
+│   ├── DistilBERTRegressionLoRA/            # LoRA adaptation
+│   └── RoBERTaRegressionFull/               # Fully fine-tuned 
+├── language/
+│   ├── CNN/                                 # Raw CNN on RoBERTa tokenizer embeddings
+│   ├── DeBERTaClassificationLoRA/           # LoRA adaptation
+│   ├── DistilBERTClassificationBaseline/    # Only final classification layer trained
+│   ├── DistilBERTClassificationFull/        # Fully fine-tuned
+│   ├── DistilBERTClassificationFullCNNHead/ # Fully fine-tuned standard model with CNN on last layer
+│   ├── DistilBERTClassificationLoRA/        # LoRA adaptation
+│   ├── MpNetClassificationFull/             # Fully fine-tuned
+│   ├── RoBERTaClassificationFull/           # Fully fine-tuned
+│   ├── RoBERTaClassificationFullCNNHead/    # Fully fine-tuned standard model with CNN on last layer
+│   ├── RoBERTaLargeClassificationFull/      # Fully fine-tuned
+│   ├── RoBERTaLargeMixedCNN/                # Parallel running CNN + RoBERTaLarge fully trained, head trained on combined output
+│   └── RoBERTaMixedCNN/                     # Parallel running CNN + RoBERTa fully trained, head trained on combined output
+├── mbti/
+│   ├── DistilBERTClassificationBaseline/    # Only final classification layer trained
+│   ├── DistilBERTClassificationFull/        # Fully fine-tuned
+│   └── DistilBERTClassificationLoRA/        # LoRA adaptation
+└── political/
+    ├── DistilBERTRegressionBaseline/        # Only final regression layer trained
+    ├── DistilBERTRegressionFull/            # Fully fine-tuned
+    ├── DistilBERTRegressionFullLongText/    # Unused (results very random because of cutting long articles)
+    ├── DistilBERTRegressionFullRawLogits/   # Classifier head outputs without softmax
+    └── DistilBERTRegressionLoRA/            # LoRA adaptation
 ```
 
 Organized by prediction task:
@@ -96,7 +96,10 @@ Organized by prediction task:
 Testing/
 ├── RUNS/                  # Results from previous runs per task
 ├── shap/                  # Scripts and notebooks needed for shap runs
-└── TODO.md
+│   ├── ModelWrapper/      # Classes for easy loading and running different models
+|   |   └── ...
+│   └── ... 
+└── comparisons/           # Results of testing ReadyToDeploy HuggingFace models
 ```
 
 * SHAP scripts allow per-model testing of actual performance
