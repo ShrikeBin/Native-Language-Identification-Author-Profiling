@@ -33,7 +33,6 @@ This project focuses on **Native Language Identification** and **Author Profilin
 │   └── ... 
 ├── Training/              # Everything related to model training
 │   └── ... 
-├── ACCURACIES.md          # Summary of model evaluation results
 └── README.md
 ```
 
