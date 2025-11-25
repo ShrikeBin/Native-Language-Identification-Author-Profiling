@@ -237,6 +237,8 @@ Jupyter Notebook (optional, for notebooks)
 |![](Assets/Screenshots/2.png)|
 |------------------------|
 |![](Assets/Screenshots/3.png)|
+|------------------------|
+|![](Assets/Screenshots/4.png)|
 
 ---
 ---
