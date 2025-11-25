@@ -1,20 +1,24 @@
 # Native Language Identification and Author Profiling
 
-Project focused on recognition of individual traits based on English writing using transformers, convolutional neural networks and a combination of both.
+This project focuses on **Native Language Identification** and **Author Profiling** from English text. Its main method is raw **transformer-based encoders**, however in some examples it leverages **Convolutional Neural Networks (CNNs)** alongside **encoder-based models** in a hybrid architecture to capture both local patterns and global contextual features. The system is designed to analyze linguistic traits and writing style, enabling accurate prediction of an author’s native language, age, gender and other traits. It serves as a approachable framework for training, and later, experimenting with fined tuned models on set classification tasks.
 
 ---
 
 ## Table of Contents
 
 * [Project Structure](#project-structure)
-* [Data](#data)
-* [Training](#training)
-* [Testing & SHAP](#testing-shap)
+* * [App](#app)
+* * [Assets](#assets)
+* * [Testing](#testing-shap)
+* * [Training](#training)
+* * * [Data](#data)
+* * * [Models](#models)
 * [Usage & Requirements](#usage-requirements)
-* [Results](#results)
+* [Results / Plots](#results)
 * [Screenshots](#screenshots)
 * [License](#license)
 
+---
 ---
 
 ## Project Structure
@@ -22,26 +26,82 @@ Project focused on recognition of individual traits based on English writing usi
 ```
 .
 ├── App/                   # How to run it yourself in a Nutshell
-├── Assets/                # Images, Screenshots
+│   └── ... 
+├── Assets/                # Images, Screenshots, Scripts used to plot data
+│   └── ... 
 ├── Testing/               # Evaluation scripts, notebooks, and test runs of models
+│   └── ... 
 ├── Training/              # Everything related to model training
+│   └── ... 
 ├── ACCURACIES.md          # Summary of model evaluation results
 └── README.md
 ```
 
-### Training Folder
+---
+---
+
+### App
+
+```
+App/
+├── ModelWrapper/      # Classes for easy loading and running different models
+└── RunModels/         # Notebooks that allow you to play around with model predictions
+```
+
+* Model Wrappers allows for quick loading of models from the project folders.
+* Models have to be firstly trained by running their corresponding training script in their folder.
+
+---
+---
+
+### Assets
+
+```
+Assets/
+├── DataToPlot/         # Scripts with folders to plot data, originally jsons copied from logging training folders
+├── Papers/             # Papers used as references when working on the project
+├── Plots               # Plots for README
+└── Screenshots/        # Screenshots for README
+```
+* Here we hold various resources needed for presentation and creation of the project
+
+---
+---
+
+### Testing & SHAP
+
+```
+Testing/
+├── comparisons/           # Results of testing ReadyToDeploy HuggingFace models
+├── metrics/               # Notebook where you can test Accuracy and F1 of different models
+├── runs/                  # Results from previous runs (before finding out optimal ways to do that) per task
+└── survey/                # Notebook where you can test models on the data from survey conducted by us during project
+```
+
+* SHAP scripts allow per-model testing of actual performance
+* SHAP highlights what part of input influenced the output the most which allows diagnostics
+* Each subfolder under `runs/` corresponds to a task like `age`, `gender`, `language`, on other models
+* `survey/` contains notebook with data from our collection survey, you can load the models you want and see how they work
+
+---
+---
+
+### Training
 
 ```
 Training/
 ├── DATA/                       # Raw and preprocessed datasets
-├── MODELS/                     # Trained model checkpoints organized by task
-├── checkTokenDistribution.py   # See if dataset is balanced in token lenght
-├── deparquetize.py             # Convert parquet datasets to other formats
-├── parquetize.py               # Convert CSV/text datasets to parquet
-└── README.md                   # Detailed description of datasets
+└── MODELS/                     # Trained model checkpoints organized by task
 ```
 
-### Models (Training/MODELS)
+* Models are organized by task in `Training/MODELS`.
+* Different variants are trained for different tasks.
+* Each folder contains a `train.py` script responsible for training its model.
+* Data is collected and preprocessed in `Training/DATA`.
+
+---
+
+### Models 
 
 ```
 MODELS/
@@ -90,29 +150,29 @@ Organized by prediction task:
 
 ---
 
-### Testing Folder
+### Data
 
 ```
-Testing/
-├── RUNS/                  # Results from previous runs per task
-├── shap/                  # Scripts and notebooks needed for shap runs
-│   ├── ModelWrapper/      # Classes for easy loading and running different models
-|   |   └── ...
+DATA/
+├── age/                        # parquets
 │   └── ... 
-└── comparisons/           # Results of testing ReadyToDeploy HuggingFace models
+├── gender/                     # parquets
+│   └── ... 
+├── language/                   # parquets + masking script + language maps
+│   └── ... 
+├── mbti/                       # parquets + label map
+│   └── ... 
+├── political/                  # parquets
+│   └── ... 
+├── checkTokenDistribution.py   # See if dataset is balanced in token lenght
+├── deparquetize.py             # Convert parquet datasets to other formats
+├── parquetize.py               # Convert CSV/text datasets to parquet
+└── README.md                   # Detailed description of datasets and work regarding them
 ```
 
-* SHAP scripts allow per-model testing of actual performance
-* Each subfolder under `RUNS/` corresponds to a task like `age`, `gender`, `language`, etc.
-
----
-
-## Data
-
-* Stored in `Training/DATA` in parquet format.
+* Stored in `Training/DATA/...` in parquet format.
 * Preprocessing scripts in `Training/` handle tokenization, masking, and format conversion.
 * Tasks are as follows:
-
   * Age prediction (regression based)
   * Gender prediction (regression based)
   * Language classification
@@ -120,20 +180,6 @@ Testing/
   * Political orientation prediction (regression based)
 
 ---
-
-## Training
-
-* Models are organized by task in `Training/MODELS`.
-* Different variants are trained for different tasks.
-* Each folder contains a `train.py` script responsible for training its model.
-
----
-
-## Testing SHAP
-
-* Use `Testing/shap/run.ipynb` to evaluate model predictions using SHAP.
-* Old run results stored in `Testing/RUNS/<task>/<run>.ipynb` as reference.
-
 ---
 
 ## Usage Requirements
@@ -158,6 +204,7 @@ Jupyter Notebook (optional, for notebooks)
 ```
 
 ---
+---
 
 ## Results
 
@@ -165,17 +212,18 @@ Jupyter Notebook (optional, for notebooks)
 
 | Language Classification|
 |------------------------|
-|![Language](Assets/plots/language.png)|
+|![Language](Assets/Plots/language.png)|
 
 | Gender Prediction | Age Prediction |
 |------------------------|----------------|
-|![Gender](Assets/plots/gender.png) | ![Age](Assets/plots/age.png) |
+|![Gender](Assets/Plots/gender.png) | ![Age](Assets/Plots/age.png) |
 
 | Political Orientation | MBTI Classification |
 |-----------------|-------------------|
-| ![Political](Assets/plots/political.png) | ![MBTI](Assets/plots/mbti.png) |
+| ![Political](Assets/Plots/political.png) | ![MBTI](Assets/Plots/mbti.png) |
 
 
+---
 ---
 
 ## Screenshots
@@ -184,12 +232,13 @@ Jupyter Notebook (optional, for notebooks)
 
 | Screenshots (PLACEHOLDERS FOR NOW)|
 |------------------------|
-|![](Assets/screenshots/1.png)|
+|![](Assets/Screenshots/1.png)|
 |------------------------|
-|![](Assets/screenshots/2.png)|
+|![](Assets/Screenshots/2.png)|
 |------------------------|
-|![](Assets/screenshots/3.png)|
+|![](Assets/Screenshots/3.png)|
 
+---
 ---
 
 ## License

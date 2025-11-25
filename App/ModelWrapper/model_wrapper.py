@@ -44,7 +44,7 @@ class Model:
         if head_type == 'Classification': # Transformers Classifiers
             self.model = AutoModelForSequenceClassification.from_pretrained(path, num_labels=len(self.label_map))
         else: # Custom Head
-            head_module_path = f"Testing.shap.ModelWrapper.custom_heads.{head_type}"
+            head_module_path = f"App.ModelWrapper.custom_heads.{head_type}"
             match head_type:
                 case 'Regression':
                     head_module = importlib.import_module(head_module_path)
