@@ -7,7 +7,7 @@ Model training scripts were optimized to work on RTX 3060ti with 8gb of VRAM
 
 ### Gender:
 - DistillBERT Full Fine Tune
-- RoBERTa Full Fine Tune (if you have resources (1% increase))
+- RoBERTa Full Fine Tune (if you have resources (1% difference))
 
 ### Language:
 - RoBERTa Full Fine tune (best balance, transformer only)
