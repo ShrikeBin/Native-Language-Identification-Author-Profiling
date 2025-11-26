@@ -56,6 +56,13 @@ class Model:
                     model_path = f"Training/MODELS/{trait_name}/{model}ClassificationFull/model"
                     cnn_path = f"Training/MODELS/{trait_name}/{model}{head_type}{train}/CNN/model.safetensors"
                     self.model = MixedClassifier(model_path, cnn_path, num_classes=len(self.label_map))
+                case 'CNN':
+                    head_module = importlib.import_module(head_module_path)
+                    CustomCNN = getattr(head_module, "CustomCNN")
+                    self.model = CustomCNN(num_classes=len(self.label_map))
+                    self.name = f"{trait_name} ({head_type})"
+                    self.tokenizer = AutoTokenizer.from_pretrained("roberta-base")
+                    path = f"Training/MODELS/{trait_name}/{head_type}/model"
                 case _:
                     raise KeyError(f"Unknown head type: {head_type}")
             
@@ -64,6 +71,7 @@ class Model:
                 self.model = PeftModel.from_pretrained(self.model, path)
                 self.model.merge_adapter()
             else:
+                print(f"{self.name} loading state dict")
                 from safetensors.torch import load_file
                 self.model.load_state_dict(load_file(f"{path}/model.safetensors"))
 
@@ -92,7 +100,7 @@ class Model:
 
         # === Customized Output ===
         match self.type:
-            case 'Classification' | 'MixedCNN':
+            case 'Classification' | 'MixedCNN' | 'CNN':
                 output = torch.softmax(output, dim=-1)
             # case 'classreg':
             #     output = output.squeeze(-1)
@@ -109,7 +117,7 @@ class Model:
 
         # === Customized String ===
         match self.type:
-            case 'Classification' | 'MixedCNN':
+            case 'Classification' | 'MixedCNN' | 'CNN':
                 labels = np.argsort(pred)[::-1]
                 probs = pred[labels]
                 last_index = np.searchsorted(np.cumsum(probs), 0.5) + 1
@@ -130,7 +138,7 @@ class Model:
         # === Customized Explanation ===
         tokens = shap_values.data[0]
         match self.type:
-            case 'Classification' | 'MixedCNN':
+            case 'Classification' | 'MixedCNN' | 'CNN':
                 pred = np.argmax(self.predict([text])[0])
                 values = shap_values.values[0][:,pred]
             case _:

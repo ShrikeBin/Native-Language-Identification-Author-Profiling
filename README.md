@@ -73,13 +73,14 @@ Assets/
 Testing/
 ├── comparisons/           # Results of testing ReadyToDeploy HuggingFace models
 ├── metrics/               # Notebook where you can test Accuracy and F1 of different models
-├── runs/                  # Results from previous runs (before finding out optimal ways to do that) per task
+├── runs-legacy/           # Results from previous runs (before finding out optimal ways to do that) per task
 └── survey/                # Notebook where you can test models on the data from survey conducted by us during project
 ```
 
 * SHAP scripts allow per-model testing of actual performance
 * SHAP highlights what part of input influenced the output the most which allows diagnostics
-* Each subfolder under `runs/` corresponds to a task like `age`, `gender`, `language`, on other models
+* Each subfolder under `runs-legacy/` corresponds to a task like `age`, `gender`, `language`, on other models
+* `runs-legacy/` noteooks are LEGACY and **WILL NOT WORK**, they function as a kind of *screenshot docummentation on project work*
 * `survey/` contains notebook with data from our collection survey, you can load the models you want and see how they work
 
 ---

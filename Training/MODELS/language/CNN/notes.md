@@ -6,6 +6,7 @@
 - max pool
 - linear head
 - accuracy: 72%
+- **[BEST SO FAR]**
 
 ## 2
 - own embedding [32]
