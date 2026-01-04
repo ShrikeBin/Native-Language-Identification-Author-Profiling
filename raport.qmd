@@ -1,0 +1,412 @@
+---
+title: "Multi-Task Author Profiling: Predicting Demographics and Personality from Text"
+subtitle: "AI509 - NLP Course Final Report"
+author: "Group Members: Nel Skowronek, Jan Ryszkiewicz"
+date: today
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+    # header-includes:
+    #   - \usepackage{etoolbox}
+    #   - \preto{\section}{\clearpage}
+mainfont: STIX Two Text
+sansfont: STIX Two Text
+mathfont: Latin Modern Math
+---
+
+# Introduction and Problem Presentation
+
+*Firstly I'd like to note that significant part of this report can be equally as well experienced by looking at our well documented [github repository](https://github.com/ShrikeBin/Native-Language-Identification-Author-Profiling). On it one can see screenshots, plots, and general form of the project. We tried making it as accessible as possible so anyone could clone it and play with our project themselves.*
+
+Author profiling involves inferring demographic and psychological characteristics from written text. In this project, we attempted to predict multiple author attributes: **native language, age, gender, MBTI personality type, and political orientation** from english text samples.
+
+This problem is interesting because different attributes require models to capture different linguistic marks. Language identification relies primarily on syntax (sentence structure), while political orientation depends more on semantic content. The task has practical applications in personalized recommendations, market research, etc.
+
+The main challenges we encountered:
+
+- **Data heterogeneity**: Different datasets provided different attributes and couldn't be used for many tasks simultaneously.
+- **Data availability**: Many types of data needed is considered *sensitive* and access is restricted.
+- **Data quality**: Hence we had to resort to using scraped, full of noise, and generally poor in quality datasets.
+- **Shortcut learning**: Our language model initially learned to recognize country names instead of actual linguistic patterns
+- **Class imbalance**: Some native languages had fewer than 50 samples while others had thousands
+- **Text length variation**: Blog posts, tweets, and emails have fundamentally different characteristics
+- **Task framing**: Determining whether to use regression or classification for attributes like age and political orientation
+
+The most significant challenge was dealing with the discovering that our language identification model turned out to be essentially performing geographic recognition - mentioning "Tokyo" would result in 70% Japanese prediction regardless of the actual linguistic features in the text.
+
+# Method
+
+## Datasets
+
+We assembled five distinct datasets for our multi-task system:
+
+### Native Language
+
+We initially sought TOEFL data, however we were unable to gain access to it so we managed to find some suitable alternatives: **Italki** (scraped from a language learning application) and **Lang8** (a language learning platform). Lang8 became our primary dataset due to its size and quality.
+
+We combined languages from similar language families to address sample size issues. For example, Hebrew (47 samples) was grouped with Arabic or Ukrainian with Russian, while very distinct languages with insufficient data like Mongolian (49 samples) were excluded. These groupings were based on established language family relationships.
+
+**Critical issue**: The model learned to identify cities and regions rather than linguistic patterns. A text containing "I'm from Tokyo" would predict 70% Japanese regardless of other linguistic features. We addressed this using **SpaCy's Named Entity Recognition (NER)** to mask location references with tokens like `[R]` and `[C]` (for Region, City etc), forcing the model to learn actual linguistic patterns.
+
+**Results**: The masking strategy achieved relatively good 74% accuracy on language classification using RoBERTa (RoBERTaLarge had 79.9% but was very sensitive to words, like writing "italy" anywhere would make you 90% italian again). While some location names remain in the dataset (e.g., "Barcelona" appears 34 times across 12k samples), this represented substantial improvement over the unmasked data. We tried a mix of our own architecture to try to resolve the issues with this task - more on that later.
+
+### Age and Gender
+
+We used the **Blog Authorship Corpus**, which contains short texts but has noisy labels and incomplete age coverage (notably missing 21-year-old labels). Age was treated as a regression task due to its continuous nature.
+
+For gender, we supplemented this with an **ENRON email dataset** where we extracted author names from metadata using automated methods. We cleaned all the emails of the forwarded messages, used **NER** to remove all promotional emails ("BUY NOW IN WALMART" type messages) and then tried classifying the texts using names. We scraped online name [website](https://www.behindthename.com/names/usage/english) and created a json map of names corresponding to gender. Name extraction from emails proved challenging - the system would identify patterns like "Al" within "Magd**al**ena" and incorrectly classify the author as male. We addressed this by implementing a greedy best-fit matching algorithm. This however resulted in some data loss, but significantly improved label quality.
+
+**Performance**: 76.5% accuracy with DistilBERT and 77.3% with RoBERTa using regression with 0.5 threshold rounding.
+
+### MBTI Personality Type
+
+MBTI data was readily available from **Kaggle datasets** and **Reddit scrapes**. Preprocessing primarily involved removing URLs and platform-specific artifacts, and combining very short texts into a bit longer ones (>40 tokens) class-wise.
+
+**Performance**: 40.9% accuracy with DistilBERT
+
+### Political Orientation
+
+Initial experiments with long political articles proved ineffective - the texts were too formal and journalistic, lacking personal writing style. We pivoted to **short tweets and short-form synthetic data**, which better captured individual political expression suitable for real-world inference.
+
+**Performance**: 78.7% accuracy with DistilBERT
+
+### Data Normalization
+
+We analyzed token length distributions across all datasets and normalized texts to approximately **250 tokens**. We also tried normalizing the distribution of tokens across lengths, i.e. make the fraction of longer and shorter inputs more or less equal in amount by combining shorter inputs ( < 15 tokens ), this resulted in most datasets having spikes around 50 tokens and 250 tokens and were more or less balanced combination of very short and a bit longer inputs. This ensured fair model comparison across tasks, though truncating longer expressions likely removed useful contextual information.
+
+## Models and Training
+
+### Base Model Selection
+
+We experimented with several transformer architectures:
+
+- **DistilBERT**: Initial, default model
+- **RoBERTa-base**: Improved performance, particularly on syntactic tasks
+- **RoBERTa-large**: Strongest overall performance, achieving 79.9% on language classification, however very key-word sensitive
+- **MPNet-v2**: A sentence transformer model that underperformed relative to DistilBERT
+- **DeBERTa-v3-Large**: Very large model used only once, as LoRa experiment
+
+DistilBERT proved its worth as being a good default for all tasks.
+We selected RoBERTa mainly for language based on literature indicating its strength in **syntactic analysis**, while MPNet specializes in **semantic understanding**. Our results confirmed that syntactic capabilities are more relevant for author profiling tasks.
+
+### Custom Architectures
+
+After pondering the way we recognize people by the way they speak we came up with an idea to try to look for patterns directly in the text instead focusing on the deeper meaning of the statements. Our initial trials with putting **Convolutional Neural Networks**, that work well with pattern recognition, on transformer output did not yield any noticeable improvement. After some time out of curiosity we decided to try putting *CNN* on just raw tokens as this would reduce any unnecessary processing and allow the network to view raw snippets of the entries. This initiali yielded very promising results so we opted to investigate it further. In the end we explored hybrid approaches combining convolutional layers with transformers:
+
+- **Pure Convolutional Neural Network on tokenizer output**: `CustomCNN` achieved 69% accuracy with DistilBERT tokenizer and 73.7% with RoBERTa tokenizer
+
+We discovered that RoBERTa embedder is much better at noticing small language mistakes and therefore better for our native language recognition tasks. During our trainings CNN was almost always trained on pre-trained transformer embedders but with frozen embedding layer so the amount the trainable part is still only the *CNN*. Experiments with custom, randomly generated embeddings showed no measurable impact on performance, so we decided to continue using RoBERTa embeddings without training them.
+
+- **Hybrid architecture**: RoBERTa-large combined with CNN layers achieved **80.9% accuracy**, surpassing our 80% target, however RoBERTaLarge seemed to influence the classification with its semantic focus too much so we decided to use **MixedCNN with RoBERTa** as our **best model** as it balances overall dataset accuracy and doesn't seem to focus on key words as much.
+
+The rationale was to leverage transformers for contextual semantic understanding while using CNNs to capture local syntactic patterns in the tokenization itself.
+
+### LoRA vs Full Fine-Tuning vs Baseline
+
+We compared **LoRA (Low-Rank Adaptation)** against full fine-tuning:
+
+- Initial LoRA experiments underperformed compared to full fine-tuning on all tasks.
+- The difference however was almost always only around 1-3%.
+- Achieved **100x model size reduction** while maintaining mostly competitive performance
+- LoRA required **significantly higher learning rates** compared to full fine-tuning
+
+We also tried comparing pure **Baseline** fine-tuning (only last layer) however as you can see on the plots on our [repository](https://github.com/ShrikeBin/Native-Language-Identification-Author-Profiling), its performance was abysmal at best, so we decided not to follow through with it any more than simply necessary for comparison.
+
+### Technical Challenges
+
+- Implementing a **custom regression head** for age prediction disrupted the standard Hugging Face pipeline - the configuration file was not automatically generated, requiring manual weight loading with safetensors.
+- Combining outputs of transformers with CNN outputs in meaningful way
+- Managing GPU memory
+- Figuring out the correct methods of loading and saving the models (at some point by mistake we were saving the one with highest error instead of the lowest because of ambiguity in `transformers` Trainer parameters)
+
+## Testing
+
+Throughout the development of the project, we used a range of evaluation techniques to verify that our models behaved as expected.
+
+### SHAP Analysis
+
+We integrated SHAP to probe how individual textual features influenced model predictions.  
+This gave us instance-level and global explanations that went far beyond raw metrics. By inspecting SHAP value distributions and top-contributing tokens, we were able to see *what the model actually paid attention to*, not just how well it scored.
+
+This interpretability step was crucial for two reasons:
+
+1. **Diagnosing Dataset Problems**  
+   SHAP exposed several artifacts in our dataset. Certain tokens, formatting patterns, or repeated structures acted as shortcuts for the model.  
+   These artifacts weren’t linguistic features — they were dataset-specific noise.  
+   Without SHAP, they would have remained hidden behind strong accuracy numbers.  
+   Once identified, we could mask or filter these patterns, forcing models to rely on genuine linguistic cues.
+
+2. **Selecting the Best Model (Even if Metrics Disagreed)**  
+   Some models achieved higher F1 or accuracy but relied heavily on superficial signals revealed by SHAP graphics.  
+   Others had slightly lower metrics but demonstrated much more stable and linguistically plausible feature attributions.  
+   SHAP essentially let us judge *model honesty*:  
+   - Was the model capturing grammar, lexical patterns, or stylistic tendencies?  
+   - Or was it overfitting specific tokens or formatting quirks?
+
+   This led us to prefer a model that was not the top performer by accuracy but showed the most meaningful, interpretable reasoning process.
+   In other words, SHAP made it possible to evaluate quality in dimensions that traditional metrics cannot capture.
+
+### Issues With Accuracy
+
+During training, we initially relied on Accuracy and MSE to guide model selection. While convenient, these metrics were limited and often masked poor performance on minority classes.  
+Transitioning to F1 scores thankfully revealed no imbalances and did not expose any cases where the models succeeded globally but failed locally.
+
+However, even F1 alone didn’t give us the full picture.  
+Combining F1 with SHAP-based interpretability ultimately provided the most reliable signal:  
+not just *how often* the model was right, but *why* it was right.
+That was the case with RoBERTa and RoBERTaLarge, where the first, even though worse on test data, was overall better on real world examples.
+
+## Observations
+
+### Performance Patterns
+
+1. **Context dependency**: Predictions improved substantially when text resembled conversational dialogue, consistent with our training data distribution (tweets and emails)
+2. **Location masking effectiveness**: Transitioning from geographic pattern matching to linguistic feature learning represented our most significant improvement
+3. **Model scaling benefits**: Clear performance progression from DistilBERT (69%) -> RoBERTa-base (74%) -> RoBERTa-large (79.9%)
+4. **CNN efficiency**: Pure CNN on tokenizer output achieved ~74% accuracy with substantially fewer parameters
+
+### Interesting Results
+
+1. **Age prediction bias**: Model predictions for our own writing consistently centered around 24 years, likely attributable to missing labels at age 21 (labels were mostly 18, 24, 27 etc)
+2. **Cross-linguistic confusion**: Consistent misclassification of Polish as Spanish, potentially indicating similar syntactic structures
+3. **Location sensitivity**: Despite masking, RoBERTa-large exhibited strong focus on remaining location mentions, we recommend to use RoBERTa instead
+4. **Recognition of AI generated text**: During our midway presentation our models profiled two different texts generated by 
+Claude Sonnet extremely similarly, which could give a base for recognising whether a text is AI generated or not - by comparing 
+the profile.
+
+### Linguistic Patterns Identified
+
+- **Political orientation and punctuation**: Liberal-leaning text showed more careful punctuation usage (?)
+- **Gender and sentiment**: Female authors demonstrated more positive language patterns
+- **Syntax vs semantics**: RoBERTa demonstrated  significant improvement over MPNet, confirming the importance of syntactic features
+- **Specific language groups**: Asian languages were very easy to predict: Korean, Japanese and Chinese speakers probably have a distinct way of speaking english.
+
+\newpage
+
+# Model Accuracies
+
+| Task                              | Model / Variant                  | Accuracy (%) |
+|-----------------------------------|----------------------------------|--------------|
+| **Gender (class)**                | DistilBERT - Full Fine-tuned     | *76,4%*      |
+| **Gender (reg)**                  | DistilBERT - Baseline            | *66,2%*      |
+|                                   | DistilBERT - LoRA                | *72,6%*      |
+|                                   | DistilBERT - Full Fine-tuned     | *76,5%*      |
+|                                   | RoBERTa - Full Fine-tuned        | *77,3%*      |
+|-----------------------------------|----------------------------------|--------------|
+| **MBTI (class)**                  | DistilBERT - Baseline            | *22,3%*      |
+|                                   | DistilBERT - LoRA                | *32,1%*      |
+|                                   | DistilBERT - Full Fine-tuned     | *40,9%*      |
+|-----------------------------------|----------------------------------|--------------|
+| **Political (reg)**               | DistilBERT - Full Fine-tuned     | *78,7%*      |
+|                                   | DistilBERT - LoRA                | *58,0%*      |
+|                                   | DistilBERT - Baseline            | *22,8%*      |
+|-----------------------------------|----------------------------------|--------------|
+| **Language (class)**              | DistilBERT - Baseline            | *46,5%*      |
+|                                   | DistilBERT - LoRA                | *62,1%*      |
+|                                   | DistilBERT - Full Fine-tuned     | *69,2%*      |
+|                                   | DeBERTa-v3-Large - LoRA          | *70,5%*      |
+|                                   | MPNet-v2 - Full Fine-tuned       | *68,7%*      |
+|                                   | RoBERTa - Full Fine-tuned        | *74,1%*      |
+|                                   | RoBERTa-Large - Full Fine-tuned  | *79,9%*      |
+|                                   | CNN (Best Achieved)              | *73,6%*      |
+|                                   | MixedCNN RoBERTa (Hybrid)        | *77,3%*      |
+|                                   | MixedCNN RoBERTaLarge (Hybrid)   | *80,9%*      |
+|-----------------------------------|----------------------------------|--------------|
+
+
+| Task                              | Model / Variant                  | sqrt(MSE)    |
+|-----------------------------------|----------------------------------|--------------|
+| **Age (reg)**                     | DistilBERT - Baseline            | *7*          |
+|                                   | DistilBERT - LoRA                | *6.25*       |
+|                                   | DistilBERT - Full Fine-tuned     | *5.59*       |
+|-----------------------------------|----------------------------------|--------------|
+
+Results demonstrate clear benefits from model scaling and architectural hybridization.
+
+## Key Findings
+
+1. **Data quality impact**: Improvement from 69% to 80.9% resulted more from addressing dataset biases than from model scaling
+2. **Syntactic features dominate**: RoBERTa's syntactic focus proved more effective than MPNet's semantic specialization
+3. **Hybrid architectures effective**: Combining transformers with CNNs yielded optimal results
+4. **Task-specific requirements**: Different attributes required different modeling approaches
+
+# Discussion
+
+## Summary
+
+We developed a multi-task author profiling system predicting language, age, gender, MBTI, and political orientation from text. The system achieved 80.9% accuracy on language classification through a combination of RoBERTa-large and CNN layers. The most impactful improvements came from implementing NER-based masking to prevent shortcut learning through location name recognition and combining very syntax focused CNN's with more semantic sensitive transformers.
+
+## Interpretation
+
+**Data quality as primary factor**: Our largest performance gains resulted from addressing data biases rather than architectural improvements. This underscores the importance of dataset curation in NLP applications. Good datasets are crucial in training and fine-tuning classification models as poor quality data may prevent researchers from reaching set goals.
+
+**Syntactic vs semantic features**: RoBERTa's superior performance over MPNet demonstrates that author profiling relies more heavily on grammatical structure and sentence construction than semantic content. This finding has implications for model selection in similar tasks.
+
+**Efficiency of CNN approaches**: A simple CNN architecture on tokenizer output achieved 74% accuracy with a fraction of the parameters required by transformer models, suggesting that not all tasks require full transformer architectures, and some might be solved with much simpler ones.
+
+**Architectural complementarity**: Our hybrid approach combining transformers (contextual understanding) with CNNs (local pattern detection) suggests these methods capture complementary linguistic features rather than redundant information.
+
+## Limitations
+
+### Dataset Limitations
+
+- Severe class imbalance (Mongolian: 49 samples vs. thousands for major languages)
+- Missing labels creating artificial distribution gaps (no 21-year-olds in age data)
+- Text truncation potentially removing important contextual information
+- Training data dominated by informal text (blogs, tweets, emails), limiting generalization to formal writing
+- Incomplete location masking (Barcelona appears 34 times in 12k samples)
+- Probably significant amount of noise in the dataset as they are not from a verified and trusted source.
+
+### Model Limitations
+
+- Custom regression head implementation breaks standard Hugging Face pipeline compatibility
+- RoBERTa-large + CNN requires substantial computational resources before it can be used
+- Training focused exclusively on English text
+- Limited model interpretability - difficult to determine specific features driving predictions
+- Separate models for each attribute rather than joint multi-task learning
+
+### Evaluation Limitations
+
+- Binary gender classification does not reflect gender diversity
+- MBTI framework itself has questionable psychological validity
+- Age classification data (20 yrs old dataset) is probably influenced by generation-specific writing quirks and might not be accurate for todays society
+- Political orientation modeled as unidimensional left-right spectrum oversimplifies political beliefs
+- Short texts in general provide very little information about the person writing them which means the tasks we have chosen is innately hard to perform well on.
+
+## Future Work
+
+Priority areas for further investigation:
+
+1. **Alternative architectures**: Explore pure syntactic analyzers, character-level CNNs, and the noted concatenation experiment (combining fine-tuned RoBERTa output with CNN layer through linear projection)
+
+2. **Multi-task learning**: Develop unified model for all attributes with shared representations, potentially improving efficiency and performance through inductive transfer
+
+3. **Task reformulation**: Systematically evaluate regression versus classification for age and political orientation, create more axis focused MBTI classification, maybe try to redefine gender writing style.
+
+4. **Enhanced masking**: Remove all remaining location entities and expand masking to organizations and notable individuals
+
+5. **Cross-domain evaluation**: Test models trained on social media text against formal writing domains (academic papers, legal documents)
+
+6. **Custom, Artificial Data**: Consider usage of LLM generated data based on some examples.
+
+## Reflection
+
+Key learnings for future projects:
+
+1. **Prioritize data analysis**: Significant time was lost to retraining after discovering location name bias. Comprehensive exploratory data analysis should precede modeling
+2. **Systematic experimentation and metrics**: Replace manual parameter exploration with structured hyperparameter optimization using tools like Optuna or Ray Tune
+
+# Conclusion
+
+This project developed a multi-task author profiling system averaging 75% accuracy on all presented tasks. The work demonstrates that **data quality and bias mitigation are equally important as model architecture selection** - our NER masking strategy to eliminate location shortcuts contributed as significantly to performance as model scaling.
+
+Key contributions:
+
+- Syntax-focused models (RoBERTa) substantially outperform semantic-focused models (MPNet) for author profiling
+- Simple CNN architectures on tokenizer output can achieve very competitive results (73.6%) with minimal parameters
+- Hybrid architectures combining transformers and CNNs yield optimal performance
+
+The analysis revealed interesting sociolinguistic patterns: increased punctuation usage correlates with liberal political orientation, female authors employ more positive language, and Polish and Spanish exhibit similar syntactic structures leading to cross-linguistic confusion.
+
+Primary limitations include training data bias toward informal text (potentially limiting generalization to formal writing) and the computational requirements of our best-performing architecture. Future work should focus on finding good datasets first and then interpretability through SHAP analysis, multi-task learning approaches, and evaluation across diverse text domains.
+
+This project demonstrates that effective NLP requires balanced attention to data quality, architecture selection, and iterative refinement. Addressing dataset biases yielded equally viable performance improvements as simply scaling model size.
+
+# References
+
+Full implementation available at well-documented [github](https://github.com/ShrikeBin/Native-Language-Identification-Author-Profiling)
+
+Key resources:
+
+1. On the Development of a Large Scale Corpus for Native Language Identification : Thomas. G. Hudson, Sardar Jaf
+2. [similar project 2](https://github.com/Tejas-Nanaware/Native-Language-Identification/)
+3. [similar project 3](https://iq.opengenus.org/native-language-identification-dl/)
+4. Lang8 dataset and Italki scraped data
+5. Blog Authorship Corpus (Schler et al., 2006)
+6. Kaggle MBTI datasets and Reddit scrapes
+
+# Appendix A: Learning Objectives
+
+This project addresses the AI509 course learning objectives:
+
+## 1. Tokenization, embeddings, and neural architectures
+
+We demonstrated understanding through:
+
+- **Tokenization**: CNN experiments on pure tokenizer output revealed how tokenizers encode syntactic information independent of transformer processing
+- **Embeddings**: Compared embedding strategies (RoBERTa vs MPNet) and understood why syntactic embeddings outperform semantic ones for author profiling
+- **Transformers**: Fine-tuned multiple architectures (DistilBERT, RoBERTa-base, RoBERTa-large) demonstrating understanding of attention mechanisms and contextual representations
+- **Custom architectures**: Designed `CustomCNN` and integrated with transformer outputs
+
+## 2. Implement and fine-tune pre-trained models
+
+Implementation experience included:
+
+- Hugging Face transformers library across multiple model architectures
+- Custom regression heads for age prediction requiring manual weight management
+- Comparison of full fine-tuning versus LoRA and Baseline with varying parameter configurations
+- Application to multiple task types: classification (language, gender, MBTI, political) and regression (age)
+- Resolution of real-world technical challenges (custom heads disrupting HuggingFace pipeline compatibility)
+
+## 3. Compare model performance
+
+Systematic comparisons across:
+
+- **Model capacity**: DistilBERT (66M) -> RoBERTa-base (125M) -> RoBERTa-large (355M) parameters
+- **Architectural paradigms**: Pure transformers, pure CNNs, hybrid approaches
+- **Model specialization**: RoBERTa (syntactic) versus MPNet (semantic)
+- **Training strategies**: Full fine-tuning versus LoRA versus Baseline
+
+## 4. Assess strengths and limitations
+
+Critical evaluation of:
+
+- **Scalability**: RoBERTa-large computational requirements versus LoRA's 100x size reduction
+- **Performance**: Achieved competitive results (avg of 75% across different tasks) while identifying clear limitations
+- **Data sensitivity**: Demonstrated data quality improvements using *NER* masking
+
+## 5. Develop scalable NLP solutions
+
+Developed complete end-to-end system:
+
+- **Complex multi-task challenge**: Five different author attributes across diverse text types
+- **Domain-specific techniques**: NER-based masking for author profiling, linguistic family grouping, token length normalization
+- **Complete pipeline**: Data collection → preprocessing → training → evaluation
+
+We think that we manged to neatly fit most of the expected learning outcomes from this course into our project :D.
+
+# Appendix B: Work Distribution
+
+**[Jan Ryszkiewicz]**: 
+
+- Dataset collection
+- Language family grouping implementation
+- Initial DistilBERT development
+- NER masking strategy design and implementation
+- Hybrid model development
+- Error analysis and qualitative pattern identification
+
+**[Nel Skowronek]**:
+
+- CNN architecture design and experimentation
+- LoRA adaptation and hyperparameter tuning
+- Custom Heads implementation
+- Performance benchmarking and comparison (+ SHAP)
+- Model Wrappers for easy loading and usage.
+
+**Collaborative Work**:
+
+- Dataset preprocessing (Italki, Lang8, Blog Authorship Corpus)
+- Location bias identification and debugging
+- Architecture selection and experimental design
+- Data preprocessing and normalization pipeline
+- Documentation and report preparation
+- Repository maintenance and code organization
+
+Most tasks involved collaborative problem-solving and decision-making. The distribution above indicates primary responsibility rather than exclusive ownership, as significant overlap existed throughout every part of the project.
+
+---
+
+**Note**: This report was prepared with help of Generative Artificial Intelligence, but as this course is revolving around, well NLP, I sincerely hope you see no problem in that.
