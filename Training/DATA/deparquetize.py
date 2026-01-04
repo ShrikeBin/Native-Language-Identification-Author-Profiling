@@ -9,6 +9,7 @@ os.makedirs(csv_folder, exist_ok=True)
 
 # Loop through all Parquet files in the folder
 for filename in os.listdir(parquet_folder):
+    print(f"Processing file: {filename}")
     if filename.endswith(".parquet"):
         parquet_path = os.path.join(parquet_folder, filename)
         csv_path = os.path.join(csv_folder, filename.replace(".parquet", ".csv"))
