@@ -3,7 +3,6 @@ import pandas as pd
 from datasets import Dataset as HFDataset
 from transformers import (
     AutoTokenizer,
-    AutoModelForSequenceClassification,
     Trainer,
     TrainingArguments,
     DataCollatorWithPadding
@@ -15,22 +14,16 @@ MODEL_NAME = "roberta-base"
 TEXT_COL = "text"
 LABEL_COL = "language"
 MAX_LEN = 256
-BATCH_SIZE = 32
-NUM_EPOCHS = 4
+BATCH_SIZE = 128
+NUM_EPOCHS = 5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ===== Load full data =====
-train_df = pd.read_parquet("../../../DATA/language/baremetal/reducedMajor/train.parquet")
-test_df = pd.read_parquet("../../../DATA/language/test.parquet")
+train_df = pd.read_csv("../../../../DATA/language/baremetal/notReduced/train_masked.csv")
+test_df = pd.read_parquet("../../../../DATA/language/test.parquet")
 
 # ==== Map labels ====
-label_map = {
-    0: "English", 1: "German", 2: "Nordic", 3: "French", 4: "Italian",
-    5: "Portuguese", 6: "Spanish", 7: "Russian", 8: "Polish", 9: "Other Slavic",
-    10: "Turkic", 11: "Chinese", 12: "Vietnamese", 13: "Koreanic",
-    14: "Japonic", 15: "Tai", 16: "Indonesian", 17: "Uralic",
-    18: "Arabic", 19: "Indo-Iranian"
-}
+label_map = {0: "English", 1: "German", 2: "Nordic", 3: "French", 4: "Italian", 5: "Portuguese", 6: "Spanish", 7: "Russian", 8: "Polish", 9: "Other Slavic", 10: "Turkic", 11: "Chinese", 12: "Vietnamese", 13: "Koreanic", 14: "Japonic", 15: "Tai", 16: "Indonesian", 17: "Uralic", 18: "Arabic", 19: "Indo-Iranian"}
 label_map = {v: int(k) for k, v in label_map.items()}
 train_df[LABEL_COL] = train_df[LABEL_COL].map(label_map).astype(int)
 test_df[LABEL_COL] = test_df[LABEL_COL].map(label_map).astype(int)
@@ -53,23 +46,38 @@ train_dataset = train_dataset.rename_column(LABEL_COL, "labels")
 test_dataset = test_dataset.rename_column(LABEL_COL, "labels")
 
 # ===== Model =====
-model = AutoModelForSequenceClassification.from_pretrained(
-    MODEL_NAME,
-    num_labels=20
-)
+from cnn import CustomCNN
+
+model = CustomCNN(num_classes=20)
 model.to(DEVICE)
 
+# ===== Params ====
+def print_trainable_parameters(model):
+    trainable_params = 0
+    all_params = 0
+
+    for param in model.parameters():
+        all_params += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+
+    print(f"\nTrainable parameters: {trainable_params:,} / {all_params:,} "
+        f"({100 * trainable_params / all_params:.8f}%)")
+
+print_trainable_parameters(model)
+
+for param in model.embed.parameters():
+    param.requires_grad = False
+
+print_trainable_parameters(model)
+    
 # ===== Metrics =====
 accuracy = load("accuracy")
-f1 = load("f1")
-
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     preds = logits.argmax(axis=-1)
-    return {
-        "accuracy": accuracy.compute(predictions=preds, references=labels)["accuracy"],
-        "f1": f1.compute(predictions=preds, references=labels, average="weighted")["f1"]
-    }
+    return accuracy.compute(predictions=preds, references=labels)
+
 
 # ===== Data collator =====
 data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
@@ -79,7 +87,7 @@ training_args = TrainingArguments(
     output_dir="./results",
     eval_strategy="epoch",
     save_strategy="epoch",
-    learning_rate=2e-5,
+    learning_rate=1e-3,
     per_device_train_batch_size=BATCH_SIZE,
     per_device_eval_batch_size=BATCH_SIZE,
     num_train_epochs=NUM_EPOCHS,
@@ -87,8 +95,9 @@ training_args = TrainingArguments(
     logging_dir="./logs_language",
     logging_steps=5000,
     load_best_model_at_end=True,
+    metric_for_best_model="accuracy",
     fp16=torch.cuda.is_available(),
-    gradient_accumulation_steps=3,
+    gradient_accumulation_steps=1,
     report_to="none",
 )
 
