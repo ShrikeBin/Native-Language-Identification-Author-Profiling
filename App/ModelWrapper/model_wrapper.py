@@ -63,17 +63,6 @@ class Model:
                     self.name = f"{trait_name} ({head_type})"
                     self.tokenizer = AutoTokenizer.from_pretrained("roberta-base")
                     path = f"Training/MODELS/{trait_name}/{head_type}/model"
-                case 'TEST':
-                    # THIS HERE IS TEMPORARY FOR TESTING CUSTOM DATESETS
-                    # TODO: REMOVE LATER, or INTEGRATE PROPERLY
-                    head_module = importlib.import_module(f"App.ModelWrapper.custom_heads.CNN")
-                    CustomCNN = getattr(head_module, "CustomCNN")
-                    self.model = CustomCNN(num_classes=len(self.label_map))
-                    self.name = f"{trait_name} ({head_type})"
-                    self.tokenizer = AutoTokenizer.from_pretrained("roberta-base")
-                    path = f"Training/MODELS/language/AlternativeDataTest/CNNNotReducedNoNer/model"
-
-
                 case _:
                     raise KeyError(f"Unknown head type: {head_type}")
             
